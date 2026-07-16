@@ -952,6 +952,8 @@ require('lazy').setup({
             '--column',
             '--smart-case',
             '--ignore-case',
+            -- PJF: search hidden dotfiles too (.git/ still excluded via file_ignore_patterns)
+            '--hidden',
           },
           -- mappings = {
           --   i = { ['<c-enter>'] = 'to_fuzzy_refine' },
