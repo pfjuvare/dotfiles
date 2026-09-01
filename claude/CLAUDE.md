@@ -101,11 +101,20 @@ When PJF gives a list of TODOs to action in one batch:
 - If a task is ambiguous, surface as a blocker and ask, OR pick a reasonable interpretation and explicitly flag the assumption.
 - Always commit before reporting (so the diff lines up with what's described).
 
-### Jira tickets — use the `qj` CLI (`qfd-jira`)
+### Jira tickets — use the `pjc` CLI
 
-When PJF references a Jira ticket by key (e.g. `FIMS-1235`, `QFD-123`), fetch it with the `qj` CLI (`qfd-jira` — a Jira Cloud REST wrapper at `~/.local/bin/qj`) BEFORE reviewing. Don't rely on code comments or vault notes alone — they cite ACs but don't carry the discussion thread, and the actual "what's left to do" usually lives in the **newest comments**, which often supersede the original description/ACs.
+When PJF references a Jira ticket by key (e.g. `FIMS-1235`, `PSAPAC-1453`), fetch it with `pjc` (Pat's Jira CLI — an instance-agnostic REST v2 wrapper at `~/.local/bin/pjc`) BEFORE reviewing. Don't rely on code comments or vault notes alone — they cite ACs but don't carry the discussion thread, and the actual "what's left to do" usually lives in the **newest comments**, which often supersede the original description/ACs.
 
-- `qj issue <KEY>` → full issue details + comments (JSON). This is the source of truth for requirements and the latest product-owner direction; read the newest comments first, then compare against current code state.
-- `qj issues [jql]` → search (bare status/text arg is wrapped into JQL; default is `project = $JIRA_PROJECT ORDER BY updated DESC`). `qj snapshot [outfile]` → markdown dump of the project's issues.
-- `qj raw <path> [k=v ...]` → raw GET against the v2 API for anything the subcommands don't cover.
-- **Writes are outward-facing — ask first.** Create/update/comment/transition/assign are DISABLED unless `QJ_ALLOW_WRITES=1` (one-off prefix or persisted in `~/.config/jira/qfd.env`). Treat any write as an outward-facing action and confirm with PJF first (same caution as `weboard push`). Auto-applies a `qj` label on issue-create unless `--no-qj-label`.
+**Pick the instance with a flag** — one config file per Jira, at `~/.config/jira/<instance>.env`. `--<instance>` works for any name with a matching env file. With no flag, the command runs against the default instance; precedence is `--<instance>` > `$PJC_ENV` > `~/.config/jira/default` (set via `pjc default <instance>`) > the sole instance if only one is configured. **Don't rely on the default — always pass the flag explicitly**, since it's user-settable and a wrong guess means querying the wrong organisation's Jira.
+
+| Flag | Jira | Flavour | Project | Keys |
+|---|---|---|---|---|
+| `--qfd` | qfes.atlassian.net (client) | Cloud | FIMS | `FIMS-*` |
+| `--juvare` | jira.juvare.com (internal) | Server/DC | PSAPAC | `PSAPAC-*` |
+
+Infer the instance from the key prefix — `FIMS-*` → `--qfd`, `PSAPAC-*` → `--juvare`. `pjc envs` lists what's configured; `pjc --<instance> editenv` opens (or scaffolds) that instance's env file in nvim.
+
+- `pjc --qfd issue <KEY>` → full issue details + comments (JSON). This is the source of truth for requirements and the latest product-owner direction; read the newest comments first, then compare against current code state.
+- `pjc --qfd issues [jql]` → search (a bare word/phrase is wrapped as a status filter; anything with a JQL operator or `AND`/`OR`/`ORDER BY` passes through; default is `project = $JIRA_PROJECT ORDER BY updated DESC`). `pjc --qfd snapshot [outfile]` → markdown dump of the project's issues.
+- `pjc --qfd raw <path> [k=v ...]` → raw GET against the v2 API for anything the subcommands don't cover.
+- **Writes are outward-facing — ask first.** Create/update/comment/transition/assign are DISABLED unless `PJC_ALLOW_WRITES=1` (one-off prefix or persisted in the instance's env file). Treat any write as an outward-facing action and confirm with PJF first (same caution as `weboard push`). Auto-applies the instance's `JIRA_TOOL_LABEL` on issue-create unless `--no-tool-label`.

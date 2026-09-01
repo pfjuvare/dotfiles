@@ -10,6 +10,10 @@ HISTFILE=~/.zsh_history
 setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
 setopt APPEND_HISTORY
+# Write each command to $HISTFILE as it's entered, not at shell exit. Matters when
+# a shell dies without a clean exit (tmux kill-pane, terminal window closed,
+# SIGKILL) — with plain APPEND_HISTORY that session's commands can be lost.
+setopt INC_APPEND_HISTORY
 
 # Prompt: user@host:dir$ (matching bash theme colors)
 autoload -U colors && colors
@@ -78,7 +82,9 @@ if [[ -d /mnt/c ]]; then
   alias dpirdpm='cd ~/code/clients/DPIRD/personnel-manager'
   alias ntfes='cd ~/code/clients/NTFES'
   alias qfd='cd ~/code/clients/QFD'
-  alias qfpeople='cd ~/code/clients/QFD/people'
+  alias qfpeople='cd ~/code/clients/QFD/boards/people'
+  alias qflogistics='cd ~/code/clients/QFD/boards/logistics'
+  alias qfwarnings='cd ~/code/clients/QFD/boards/warnings'
   alias sases='cd ~/code/clients/sa-ses'
   alias agvic='cd ~/code/clients/agvic'
   alias avops='cd ~/code/clients/agvic/boards/agvic-ops'
@@ -242,6 +248,10 @@ tsl() {
 # Layout shortcuts (DHH's map: ic = editor+opencode, icx = editor+both agents)
 alias ic='tdl claude'
 alias icx='tdl claude opencode'
+
+# Claude Code shortcuts
+alias cy='claude --dangerously-skip-permissions'
+alias cyc='claude -c --dangerously-skip-permissions'
 
 # Private aliases (not tracked in git)
 [ -f "$HOME/dotfiles/aliases.local" ] && source "$HOME/dotfiles/aliases.local"

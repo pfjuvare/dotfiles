@@ -176,7 +176,7 @@ vim.o.inccommand = 'split'
 vim.o.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
-vim.o.scrolloff = 10
+vim.o.scrolloff = 999
 
 -- PJF: Treesitter-based folding (e.g. folds markdown by heading, nested).
 -- Requires the relevant parser to be installed (:TSInstall <lang>).
@@ -348,6 +348,66 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufWinEnter' }, {
   pattern = vim.fn.expand '~/pkm' .. '/*.md',
   callback = function()
     vim.opt_local.conceallevel = 2
+  end,
+})
+
+-- PJF: standalone <CR> checkbox/list cycle for ALL markdown files, not just the
+-- pkm vault. obsidian.nvim only binds its smart-action <CR> inside vault buffers
+-- (see the BufEnter handler in the obsidian spec below), so outside the vault <CR>
+-- did nothing special. This mirrors the vault's short cycle on the current line:
+--   bare text -> '- ' dash -> '- [ ]' -> '- [x]' -> bare text
+-- Layering: this is a buffer-local FileType=markdown map, set synchronously when
+-- the buffer loads. For vault buffers obsidian.nvim re-maps <CR> to obsidian_cr via
+-- vim.schedule (so it runs AFTER this and wins), adding link/tag following on top.
+-- So this is the base for every .md; obsidian_cr is the richer map inside the vault.
+local function markdown_cycle_line(line)
+  local indent, rest
+  -- '- [x] ...' (checked, any case) -> strip the marker back to bare text
+  indent, rest = line:match '^(%s*)%- %[[xX]%]%s?(.*)$'
+  if indent then
+    return indent .. rest
+  end
+  -- '- [ ] ...' (unchecked) -> checked
+  indent, rest = line:match '^(%s*)%- %[ %]%s?(.*)$'
+  if indent then
+    return indent .. '- [x] ' .. rest
+  end
+  -- '- ...' (dash list item, no checkbox) -> unchecked checkbox
+  indent, rest = line:match '^(%s*)%- (.*)$'
+  if indent then
+    return indent .. '- [ ] ' .. rest
+  end
+  -- bare line -> dash list item
+  indent, rest = line:match '^(%s*)(.*)$'
+  return indent .. '- ' .. rest
+end
+
+local function markdown_cr()
+  vim.api.nvim_set_current_line(markdown_cycle_line(vim.api.nvim_get_current_line()))
+end
+
+-- Visual-mode counterpart: cycle every line in the selection. Reads the range with
+-- line('v')/line('.') (rather than a helper that drops the selection) so the visual
+-- selection stays active and <CR> can be pressed repeatedly to keep cycling. Blank
+-- lines are skipped so separators in a multi-line selection don't become bullets.
+local function markdown_cr_visual()
+  local s, e = vim.fn.line 'v', vim.fn.line '.'
+  if s > e then
+    s, e = e, s
+  end
+  for lnum = s, e do
+    local line = vim.api.nvim_buf_get_lines(0, lnum - 1, lnum, false)[1]
+    if line and line:match '%S' then
+      vim.api.nvim_buf_set_lines(0, lnum - 1, lnum, true, { markdown_cycle_line(line) })
+    end
+  end
+end
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'markdown',
+  callback = function(ev)
+    vim.keymap.set('n', '<CR>', markdown_cr, { buffer = ev.buf, desc = 'Markdown: cycle checkbox / list state' })
+    vim.keymap.set('v', '<CR>', markdown_cr_visual, { buffer = ev.buf, desc = 'Markdown: cycle checkbox / list state (visual)' })
   end,
 })
 
@@ -790,26 +850,26 @@ require('lazy').setup({
       },
     },
   },
-  -- PJF: start insertion
-  -- PJF: added github copilot plugin for AI code suggestions
-  {
-    'github/copilot.vim',
-    cmd = 'Copilot',
-    event = 'InsertEnter',
-    config = function()
-      -- (optional) don’t steal <Tab> from nvim-cmp/snippets
-      vim.g.copilot_no_tab_map = true
-      vim.g.copilot_assume_mapped = true
-
-      -- Accept suggestion with Ctrl+f, (this doesn't overwrite the default nvim c-f mapping to scroll down a full page as it's only mapped in insert mode)
-      vim.keymap.set('i', '<C-f>', 'copilot#Accept("\\<CR>")', {
-        expr = true,
-        replace_keycodes = false,
-        silent = true,
-        desc = 'Copilot accept',
-      })
-    end,
-  },
+  -- PJF: github copilot plugin DISABLED (commented out)
+  --   -- PJF: added github copilot plugin for AI code suggestions
+  --   {
+  --     'github/copilot.vim',
+  --     cmd = 'Copilot',
+  --     event = 'InsertEnter',
+  --     config = function()
+  --       -- (optional) don’t steal <Tab> from nvim-cmp/snippets
+  --       vim.g.copilot_no_tab_map = true
+  --       vim.g.copilot_assume_mapped = true
+  --
+  --       -- Accept suggestion with Ctrl+f, (this doesn't overwrite the default nvim c-f mapping to scroll down a full page as it's only mapped in insert mode)
+  --       vim.keymap.set('i', '<C-f>', 'copilot#Accept("\\<CR>")', {
+  --         expr = true,
+  --         replace_keycodes = false,
+  --         silent = true,
+  --         desc = 'Copilot accept',
+  --       })
+  --     end,
+  --   },
   -- PJF: end insertion
   --
   --
