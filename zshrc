@@ -250,8 +250,8 @@ alias ic='tdl claude'
 alias icx='tdl claude opencode'
 
 # Claude Code shortcuts
-alias cy='claude --dangerously-skip-permissions'
-alias cyc='claude -c --dangerously-skip-permissions'
+alias cx='claude --dangerously-skip-permissions'
+alias cxc='claude -c --dangerously-skip-permissions'
 
 # Private aliases (not tracked in git)
 [ -f "$HOME/dotfiles/aliases.local" ] && source "$HOME/dotfiles/aliases.local"
