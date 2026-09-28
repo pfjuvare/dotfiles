@@ -9,8 +9,7 @@
 #
 # Remote: `origin` (override with GITLAB_REMOTE). Host/project are derived from its URL
 # (ssh://git@host:port/group/proj.git, git@host:group/proj.git, https://host/group/proj.git).
-# Token: $GITLAB_TOKEN, else GITLAB_TOKEN=... in ~/.config/gitlab/<host>.env (chmod 600),
-# else the <host> _authToken in ~/.npmrc.
+# Token: $GITLAB_TOKEN, else GITLAB_TOKEN=... in ~/.config/gitlab/<host>.env (chmod 600).
 # Needs a personal access token with `api` scope: https://<host>/-/user_settings/personal_access_tokens
 set -euo pipefail
 
@@ -32,10 +31,6 @@ api="https://$host/api/v4"
 envfile="$HOME/.config/gitlab/$host.env"
 if [ -z "${GITLAB_TOKEN:-}" ] && [ -f "$envfile" ]; then
   GITLAB_TOKEN=$(sed -n 's/^GITLAB_TOKEN=//p' "$envfile" | tr -d '"'"'"'')
-fi
-# Fallback: the npm registry token for this host in ~/.npmrc (needs api scope).
-if [ -z "${GITLAB_TOKEN:-}" ] && [ -f "$HOME/.npmrc" ]; then
-  GITLAB_TOKEN=$(sed -n "s#^//$host/.*:_authToken=##p" "$HOME/.npmrc" | head -1)
 fi
 [ -n "${GITLAB_TOKEN:-}" ] || die "no token. Create an api-scope PAT at https://$host/-/user_settings/personal_access_tokens and put GITLAB_TOKEN=<token> in $envfile (chmod 600)"
 
