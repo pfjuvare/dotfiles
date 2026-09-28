@@ -15,7 +15,8 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
 1. **Preflight.** From the repo, run `gitlab-mr.sh check`. If it reports no token, stop and tell PJF the
    one-time setup: create an `api`-scope PAT at `https://<host>/-/user_settings/personal_access_tokens`,
    then `GITLAB_TOKEN=<token>` in `~/.config/gitlab/<host>.env` (chmod 600). Don't ask him to paste the
-   token into chat.
+   token into chat. Token lookup: `$GITLAB_TOKEN` → that env file → the host's `_authToken` in `~/.npmrc`
+   (PJF's `weboard_wsl_PAT` for gitlab.juvare.com lives there and has api scope, so juvare needs no setup).
 
 2. **Propose the fields**, pre-filled, in one short message and ask him to confirm or edit:
    - **Source branch** — default the current branch (or the finished stream's branch).
