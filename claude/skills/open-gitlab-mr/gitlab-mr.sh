@@ -4,6 +4,7 @@
 # Usage (run inside the repo):
 #   gitlab-mr.sh check                         verify token + resolve the project from the remote
 #   gitlab-mr.sh existing <source> <target>    list open MRs for that branch pair
+#   gitlab-mr.sh recent <source>               last 5 MRs from that branch (shows the usual target)
 #   gitlab-mr.sh create --source <b> --target <b> --title <t> [--description-file <f>]
 #                       [--draft] [--remove-source] [--dry-run]
 #
@@ -40,8 +41,11 @@ cmd=${1:-}; shift || true
 case "$cmd" in
   check)
     user=$(gl "$api/user" | jq -r .username) || die "token rejected by $host"
-    proj=$(gl "$api/projects/$project" | jq -r '"\(.path_with_namespace) (default branch: \(.default_branch))"') \
-      || die "project $path not accessible"
+    # Project: Read is optional (only gives the default branch); Merge Request: Read is required.
+    proj=$(gl "$api/projects/$project" 2>/dev/null | jq -r '"\(.path_with_namespace) (default branch: \(.default_branch))"') \
+      || proj="$path (default branch unknown — token lacks Project: Read)"
+    gl -G "$api/projects/$project/merge_requests" --data-urlencode per_page=1 >/dev/null \
+      || die "can't read merge requests on $path — token needs Merge Request: Read + Create"
     echo "host    $host"; echo "user    $user"; echo "project $proj"
     ;;
   existing)
@@ -49,6 +53,12 @@ case "$cmd" in
     gl -G "$api/projects/$project/merge_requests" --data-urlencode state=opened \
       --data-urlencode "source_branch=$1" --data-urlencode "target_branch=$2" \
       | jq -r '.[] | "!\(.iid)  \(.title)  \(.web_url)"'
+    ;;
+  recent)
+    [ $# -eq 1 ] || die "usage: recent <source>"
+    gl -G "$api/projects/$project/merge_requests" --data-urlencode state=all --data-urlencode per_page=5 \
+      --data-urlencode "source_branch=$1" \
+      | jq -r '.[] | "!\(.iid) \(.state) \(.source_branch)→\(.target_branch)  \(.title)"'
     ;;
   create)
     src="" tgt="" title="" descfile="" draft=0 rmsrc=0 dry=0

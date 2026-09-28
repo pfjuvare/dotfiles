@@ -19,8 +19,8 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
 
 2. **Propose the fields**, pre-filled, in one short message and ask him to confirm or edit:
    - **Source branch** — default the current branch (or the finished stream's branch).
-   - **Target branch** — default per project rules (agvic: `main` is MR-only, so `pf-dev` → `main`); else
-     the project default branch from `check`.
+   - **Target branch** — default to wherever this source branch's previous MRs went (agvic: `pf-dev` →
+     `dev`, NOT `main`). Look it up: `gitlab-mr.sh recent <source>`. Else the project default branch.
    - **Title** — from the card title / commit subjects; imperative, ≤ 72 chars.
    - **Description** — draft from `git log --no-merges <target>..<source>` and any Trello card: summary,
      changes (one line per area), how to test, card link. Write it to
