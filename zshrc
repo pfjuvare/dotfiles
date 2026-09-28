@@ -75,6 +75,7 @@ if [[ -d /mnt/c ]]; then
   export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
   # Work client directory shortcuts
+  alias clients='cd ~/code/clients'
   alias csg='cd ~/code/clients/CSG'
   alias ocrm='cd ~/code/clients/CSG/op-crm'
   alias dpird='cd ~/code/clients/DPIRD'
@@ -276,3 +277,4 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # railway
 export PATH="$HOME/.railway/bin:$PATH"
+export BROWSER=wslview
