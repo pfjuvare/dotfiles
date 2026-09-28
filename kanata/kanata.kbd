@@ -1,0 +1,34 @@
+;; Home row mods, cross-platform (Linux/macOS/Windows via kanata).
+;; Tapping a/s/d/f/j/k/l/; types the letter; holding sends a modifier.
+;; Left pinky->index: Shift/Ctrl/Alt/Super. Mirrored on the right.
+
+(defcfg
+  process-unmapped-keys yes
+)
+
+(defsrc
+  a    s    d    f
+  j    k    l    ;
+)
+
+(defvar
+  tap-time  200
+  hold-time 200
+)
+
+(defalias
+  amod (tap-hold $tap-time $hold-time a lsft)
+  smod (tap-hold $tap-time $hold-time s lctl)
+  dmod (tap-hold $tap-time $hold-time d lalt)
+  fmod (tap-hold $tap-time $hold-time f lmet)
+
+  jmod (tap-hold $tap-time $hold-time j rmet)
+  kmod (tap-hold $tap-time $hold-time k ralt)
+  lmod (tap-hold $tap-time $hold-time l rctl)
+  scmod (tap-hold $tap-time $hold-time ; rsft)
+)
+
+(deflayer base
+  @amod @smod @dmod @fmod
+  @jmod @kmod @lmod @scmod
+)

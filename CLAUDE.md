@@ -55,6 +55,17 @@ are live and either can be used.
   agent control from inside a pane), `herdr config check` (validates
   `config.toml` and reports which binding wins a conflict).
 
+## kanata (home row mods)
+
+[kanata](https://github.com/jtroo/kanata) is a cross-platform keyboard remapper used to set up home row mods (tap a/s/d/f/j/k/l/; for letters, hold for Ctrl/Shift/Alt/Super — mirrored GACS layout).
+
+- `kanata/kanata.kbd` — the config, symlinked to `~/.config/kanata/kanata.kbd` by `install.sh`.
+- `kanata/kanata.service` — systemd user unit for Linux autostart, symlinked to `~/.config/systemd/user/`.
+- `kanata/dev.kanata.kanata.plist` — macOS LaunchDaemon template (installed manually — see the plist's header comment).
+- `install.sh` installs the kanata binary and wires up `/dev/uinput` access + the systemd service automatically on native Linux.
+- **Skipped under WSL**: WSL2 has no access to the host's raw keyboard input, so kanata there can't intercept physical keys. Home row mods on a WSL machine require running kanata natively on the Windows host instead (not covered by this repo).
+- **macOS requires manual steps**: installing the Karabiner-DriverKit-VirtualHIDDevice driver and approving it in System Settings can't be scripted — `install.sh` prints the steps instead of running them.
+
 ## Neovim Config Structure
 
 The nvim config is based on [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim) — a single-file starting point, not a distribution.

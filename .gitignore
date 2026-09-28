@@ -29,6 +29,10 @@ tmux/plugins/
 !herdr/
 !herdr/**
 
+# kanata config (home row mods)
+!kanata/
+!kanata/**
+
 # Claude Code config
 !claude/
 !claude/**

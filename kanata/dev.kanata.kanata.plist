@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchDaemon for kanata on macOS (runs as root at boot).
+  Install:
+    sudo cp kanata/dev.kanata.kanata.plist /Library/LaunchDaemons/dev.kanata.kanata.plist
+    sudo chown root:wheel /Library/LaunchDaemons/dev.kanata.kanata.plist
+    sudo launchctl bootstrap system /Library/LaunchDaemons/dev.kanata.kanata.plist
+  Reload after editing the config:
+    sudo launchctl kickstart -k system/dev.kanata.kanata
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dev.kanata.kanata</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/kanata</string>
+        <string>-c</string>
+        <string>REPLACE_WITH_HOME/.config/kanata/kanata.kbd</string>
+    </array>
+
+    <key>UserName</key>
+    <string>root</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/kanata.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/var/log/kanata.log</string>
+</dict>
+</plist>
