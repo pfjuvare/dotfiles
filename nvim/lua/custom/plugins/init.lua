@@ -4,6 +4,9 @@
 -- See the kickstart.nvim README for more information
 return {
   {
+    'tpope/vim-fugitive',
+  },
+  {
     'ThePrimeagen/99',
     config = function()
       local _99 = require '99'

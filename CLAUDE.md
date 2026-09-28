@@ -24,7 +24,7 @@ The nvim config is based on [kickstart.nvim](https://github.com/nvim-lua/kicksta
 
 - `nvim/init.lua` — Main config file containing nearly all settings, keymaps, and plugin declarations. Custom additions are marked with `-- PJF:` comments.
 - `nvim/lua/kickstart/plugins/` — Optional plugin modules (neo-tree is enabled; debug, indent_line, lint, autopairs, gitsigns are available but commented out in init.lua)
-- `nvim/lua/custom/plugins/init.lua` — Empty, intended for user-added plugins (currently unused; the `{ import = 'custom.plugins' }` line is also commented out)
+- `nvim/lua/custom/plugins/` — extra plugin specs, loaded via `{ import = 'custom.plugins' }` in init.lua: `init.lua` (vim-fugitive, ThePrimeagen/99) and `obsidian.lua`
 - `nvim/lazy-lock.json` — Plugin lockfile (managed by lazy.nvim)
 
 ## Custom Modifications (PJF)
