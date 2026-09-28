@@ -199,9 +199,12 @@ end
 vim.o.confirm = true
 
 -- PJF: Use 2 spaces instead of tabs for HTML/JS/JSON files.
--- JS/JSON included because conform's format_on_save has no JS formatter, so it
--- falls back to LSP (ts_ls) formatting, which retabs the file using expandtab.
--- Without this, saving board .js files converts all leading spaces to tabs.
+-- JS/JSON were included because conform's format_on_save had no JS formatter, so
+-- it fell back to LSP (ts_ls) formatting, which retabs the file using expandtab.
+-- Without this, saving board .js files converted all leading spaces to tabs.
+-- Conform now runs prettier on those filetypes (see formatters_by_ft below), so
+-- the fallback no longer applies to them -- but this still matters for html and
+-- xhtml, which have no formatter configured.
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'html', 'xhtml', 'javascript', 'json', 'typescript' },
   callback = function()
@@ -1394,7 +1397,27 @@ require('lazy').setup({
         -- python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        --
+        -- PJF: prettier for the filetypes ts_ls attaches to. Without these,
+        -- format_on_save falls through to lsp_format = 'fallback' and tsserver
+        -- reformats the whole buffer to ITS defaults -- no space in
+        -- "function ()", different chained-call indentation -- so a one-word
+        -- edit to a board .js file lands as a 485-line diff. Prettier is only
+        -- run when it resolves from the file's own directory upward, so this is
+        -- effectively scoped to projects that have it installed (the board
+        -- repos do, and they track a .prettierrc); elsewhere it still falls
+        -- back to the LSP as before.
+        --
+        -- prettierd is listed first but is not installed, so 'prettier' is what
+        -- actually runs. If prettierd is ever added, check it picks up the
+        -- project's prettier rather than its own bundled one -- a major-version
+        -- difference would reintroduce exactly the churn this fixes.
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        jsonc = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
