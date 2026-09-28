@@ -1,0 +1,217 @@
+# herdr configuration — ported from tmux/tmux.conf so the muscle memory carries
+# over. Symlinked to ~/.config/herdr/config.toml by install.sh (the FILE, not the
+# directory: herdr keeps its sockets, logs, and session.json in that same dir).
+#
+# Reload after editing: `prefix + R` in the TUI, or `herdr server reload-config`.
+# Validate before reloading: `herdr config check` (it also reports key conflicts,
+# where the loser is silently disabled).
+#
+# Terminology: a tmux *window* is a herdr *tab*; a tmux *session* is a herdr
+# *workspace*. Bindings below are grouped to match that mapping.
+
+# Skip the first-run notification setup.
+onboarding = false
+
+[theme]
+# Matches nvim's tokyonight-night colorscheme.
+name = "tokyo-night"
+
+[theme.custom]
+# tmux used colour208 (#ff8700) for the active pane border and status bar; keep
+# that orange as herdr's accent so focus reads the same at a glance.
+accent = "#ff8700"
+
+# --------------------------------------------------------------------------
+# Keys
+# --------------------------------------------------------------------------
+# Ported from tmux. Where a tmux bind has no herdr equivalent it is called out
+# in a comment rather than silently dropped. Bindings may be a single string or
+# an array; herdr defaults are kept as secondary chords where they don't clash.
+[keys]
+# C-Space, same as tmux — keeps terminal-default C-a and C-b free.
+# NOTE: unlike tmux there is no `send-prefix`, so there is no way to pass a
+# literal C-Space through to the pane. nvim's blink.cmp <C-space> (open
+# completion / toggle docs) is therefore unreachable from inside herdr; use its
+# other trigger or remap it in nvim if you hit this.
+prefix = "ctrl+space"
+
+# --- Session-level ---------------------------------------------------------
+# tmux prefix+d. tmux's prefix+q (display-panes) is deliberately left unbound
+# here: herdr's default put *detach* on prefix+q, which is a nasty surprise when
+# your hands expect pane numbers.
+detach = "prefix+d"
+# tmux prefix+R (herdr's default already matches).
+reload_config = "prefix+shift+r"
+help = "prefix+?"
+# tmux's prefix+s is choose-tree (session picker); herdr shipped it as the
+# settings panel. The tmux reflex wins and settings moves to prefix+S.
+workspace_picker = ["prefix+w", "prefix+s"]
+settings = "prefix+shift+s"
+goto = "prefix+g"
+open_notification_target = "prefix+o"
+
+# --- Workspaces (tmux sessions) --------------------------------------------
+# tmux prefix+C-c = new named session.
+new_workspace = ["prefix+shift+n", "prefix+ctrl+c"]
+rename_workspace = "prefix+shift+w"
+# tmux prefix+K = kill-session (confirm-before). Same reasoning as close_tab
+# below: prefix+shift+k is herdr's swap-pane-up, and a destructive action does
+# not belong on a nav key, so this stays on herdr's prefix+D. Confirmation comes
+# from [ui] confirm_close below.
+close_workspace = "prefix+shift+d"
+# tmux M-Up / M-Down = switch-client -p / -n.
+previous_workspace = "alt+up"
+next_workspace = "alt+down"
+# tmux M-L = last session. herdr has no "last workspace" action — only
+# previous/next above and the prefix+w picker.
+# No tmux counterpart (its sessions aren't numbered), but the natural companion
+# to switch_tab below.
+switch_workspace = "prefix+shift+1..9"
+new_worktree = "prefix+shift+g"
+
+# --- Tabs (tmux windows) ---------------------------------------------------
+new_tab = "prefix+c"                                  # tmux prefix+c
+rename_tab = ["prefix+comma", "prefix+shift+t"]       # tmux prefix+,
+previous_tab = ["prefix+p", "alt+p"]                  # tmux prefix+p / M-p
+next_tab = ["prefix+n", "alt+n"]                      # tmux prefix+n / M-n
+# tmux prefix+N *and* the prefix-free M-1..9 jumps.
+switch_tab = ["prefix+1..9", "alt+1..9"]
+# tmux prefix+S-Left / S-Right = swap-window left/right.
+move_tab_previous = "prefix+shift+left"
+move_tab_next = "prefix+shift+right"
+# tmux prefix+k = kill-window. prefix+k is herdr's focus-pane-up (see below) and
+# a nav key is the last place a destructive bind belongs, so close-tab keeps
+# herdr's prefix+X. A stray prefix+k just moves focus up.
+close_tab = "prefix+shift+x"
+# tmux M-l = last-window. No herdr equivalent (previous/next tab only).
+
+# --- Panes -----------------------------------------------------------------
+# tmux had prefix-free C-hjkl via vim-tmux-navigator, which inspects the focused
+# pane and forwards the keystroke to nvim when nvim is running there. herdr has
+# no conditional binding, so grabbing C-hjkl outright would cut nvim off from its
+# own splits (and eat the shell's C-l / C-h). Instead:
+#   * prefix+hjkl and ctrl+alt+hjkl move between herdr panes (below), and
+#   * nvim keeps C-hjkl and calls `herdr pane focus` when the cursor is already
+#     at the edge of its last split (see nvim/init.lua).
+# Net effect: C-hjkl still crosses seamlessly out of nvim; from a shell or agent
+# pane use ctrl+alt+hjkl. ctrl+alt is the one modifier family terminals and
+# desktops leave alone — except ctrl+alt+l, which is the lock screen on KDE (and
+# some GNOME setups); if it never reaches herdr, drop that one chord.
+focus_pane_left = ["prefix+h", "ctrl+alt+h"]
+focus_pane_down = ["prefix+j", "ctrl+alt+j"]
+focus_pane_up = ["prefix+k", "ctrl+alt+k"]
+focus_pane_right = ["prefix+l", "ctrl+alt+l"]
+# tmux has these prefix-free on M-S-hjkl / M-S-<arrow> (swap-pane -d with the
+# {left-of} style targets). Not on alt+shift here: herdr uses alt+shift+up/down
+# for previous/next agent (below).
+swap_pane_left = "prefix+shift+h"
+swap_pane_down = "prefix+shift+j"
+swap_pane_up = "prefix+shift+k"
+swap_pane_right = "prefix+shift+l"
+# tmux M-Enter / M-S-Enter, inheriting the current pane's cwd (herdr does that by
+# default via terminal.new_cwd = "follow"). herdr's naming is the vim one:
+# split_vertical opens a pane to the RIGHT, split_horizontal opens one BELOW.
+# Telling M-S-Enter apart from M-Enter needs a csi-u terminal, same caveat as
+# tmux's extended-keys.
+split_horizontal = ["prefix+minus", "alt+enter"]
+split_vertical = ["prefix+v", "alt+shift+enter"]
+close_pane = "prefix+x"                               # tmux prefix+x
+zoom = "prefix+z"                                     # tmux prefix+z
+resize_mode = "prefix+r"
+# tmux prefix+; and M-;.
+last_pane = ["prefix+;", "alt+;"]
+cycle_pane_next = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
+copy_mode = "prefix+["                                # tmux prefix+[, vi keys built in
+edit_scrollback = "prefix+e"
+# Moved off prefix+P to leave that for the pkm vault (tmux prefix+P).
+rename_pane = "prefix+ctrl+p"
+toggle_sidebar = "prefix+b"
+# tmux's M-!..M-( jumped to pane N; herdr has no indexed pane focus. The nearest
+# thing is jumping to agent row N in the sidebar.
+focus_agent = "prefix+alt+1..9"
+previous_agent = "alt+shift+up"
+next_agent = "alt+shift+down"
+
+# --------------------------------------------------------------------------
+# Custom commands — the tmux binds that need a script or a CLI call
+# --------------------------------------------------------------------------
+
+# tmux prefix+P / M-P: open the pkm vault in its own tab (reuse it if it already
+# exists), running nvim on the vault. Vault path differs per machine; the script
+# handles that.
+[[keys.command]]
+key = "prefix+shift+p"
+type = "shell"
+command = "$HOME/dotfiles/bin/herdr-pkm"
+description = "open the pkm vault tab"
+
+[[keys.command]]
+key = "alt+shift+p"
+type = "shell"
+command = "$HOME/dotfiles/bin/herdr-pkm"
+description = "open the pkm vault tab"
+
+# tmux prefix+b = break-pane. prefix+b is herdr's sidebar toggle (worth keeping),
+# so this moves to prefix+B.
+[[keys.command]]
+key = "prefix+shift+b"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane move \"$HERDR_ACTIVE_PANE_ID\" --new-tab --focus >/dev/null"
+description = "break pane out into its own tab"
+
+# tmux prefix+J = join-pane into another window, prompting for the target. herdr
+# custom commands can't prompt, so this is an fzf picker in a popup.
+[[keys.command]]
+key = "prefix+ctrl+j"
+type = "popup"
+command = "$HOME/dotfiles/bin/herdr-join-pane"
+description = "send this pane into another tab"
+width = "60%"
+height = "40%"
+
+# tmux prefix+C = clone the current window's pane layout into a new window.
+[[keys.command]]
+key = "prefix+shift+c"
+type = "shell"
+command = "$HOME/dotfiles/bin/herdr-clone-tab --no-cwd"
+description = "clone this tab's layout into a new tab"
+
+# tmux prefix+M-c = clone the current window including directories.
+[[keys.command]]
+key = "prefix+alt+c"
+type = "shell"
+command = "$HOME/dotfiles/bin/herdr-clone-tab"
+description = "clone this tab (layout + directories)"
+
+[terminal]
+# tmux split-window -c "#{pane_current_path}" — new panes/tabs inherit the
+# source pane's directory.
+new_cwd = "follow"
+
+[ui]
+# tmux confirm-before on the kill binds. herdr only gates workspace/tab closes;
+# prefix+x closes a pane with no confirmation, which is the one regression from
+# the tmux setup worth knowing about.
+confirm_close = true
+# tmux's `prefix c` never prompted for a name; false keeps that feel and lets
+# herdr generate the label, which you can rename manually later (tmux itself now
+# has automatic-rename off, so names only change when you change them).
+prompt_new_tab_name = false
+prompt_new_workspace_name = false
+# tmux showed #{pane_title} in the pane border; the herdr equivalent is the
+# detected agent label.
+show_agent_labels_on_pane_borders = true
+# tmux mouse on + copy-on-drag-end into the system clipboard.
+mouse_capture = true
+copy_on_select = true
+
+[session]
+# Bring agent panes back into their own conversations after a server restart —
+# the closest thing to @resurrect-processes '"~claude *"'.
+resume_agents_on_restore = true
+
+[experimental]
+# tmux had @resurrect-capture-pane-contents 'on'; this is the herdr analogue.
+# Experimental — turn it off if restores get slow or flaky.
+pane_history = true

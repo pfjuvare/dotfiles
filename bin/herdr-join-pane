@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# Send the current herdr pane into another tab, side-by-side. Port of the tmux
+# `prefix + J` bind, which prompted for a `[session:]window` target; here the
+# target is picked with fzf (tabs across every workspace, which covers what
+# `session:window` did in tmux).
+#
+# Bound as a popup command, so it needs a TTY. Pass a tab id to skip the picker:
+#   herdr-join-pane w1:t2 [right|down]
+#
+# In the picker: Enter joins to the right (tmux's join-pane -h), Ctrl-D joins
+# below. Inverse of `prefix + B` (break-pane).
+
+set -euo pipefail
+
+HERDR="${HERDR_BIN_PATH:-herdr}"
+PANE="${HERDR_ACTIVE_PANE_ID:-${HERDR_PANE_ID:-}}"
+CURRENT_TAB="${HERDR_ACTIVE_TAB_ID:-${HERDR_TAB_ID:-}}"
+
+if [ -z "$PANE" ]; then
+  echo "herdr-join-pane: no active pane (run this from inside herdr)" >&2
+  exit 1
+fi
+
+# tab_id <TAB> "workspace / tab (n panes)", every workspace, current tab omitted
+# (joining a pane to the tab it already lives in is a no-op).
+list_targets() {
+  "$HERDR" workspace list | jq -r '.result.workspaces[] | "\(.workspace_id)\t\(.label)"' |
+    while IFS=$'\t' read -r ws ws_label; do
+      "$HERDR" tab list --workspace "$ws" |
+        jq -r --arg ws "$ws_label" --arg skip "$CURRENT_TAB" '
+          .result.tabs[] | select(.tab_id != $skip) |
+          "\(.tab_id)\t\($ws) / \(.label)  (\(.pane_count) panes)"'
+    done
+}
+
+if [ $# -ge 1 ]; then
+  target="$1"
+  split="${2:-right}"
+else
+  targets="$(list_targets)"
+  if [ -z "$targets" ]; then
+    echo "herdr-join-pane: no other tab to join" >&2
+    exit 1
+  fi
+
+  # --expect gives Ctrl-D as a second "accept" key; fzf prints the pressed key
+  # (empty line for plain Enter) before the selection.
+  selection="$(printf '%s\n' "$targets" |
+    fzf --with-nth=2.. --delimiter=$'\t' --expect=ctrl-d \
+        --prompt='join pane into > ' \
+        --header='enter: split right   ctrl-d: split down' || true)"
+  [ -z "$selection" ] && exit 0
+
+  key="$(printf '%s\n' "$selection" | sed -n 1p)"
+  target="$(printf '%s\n' "$selection" | sed -n 2p | cut -f1)"
+  [ -z "$target" ] && exit 0
+  split=right
+  [ "$key" = "ctrl-d" ] && split=down
+fi
+
+"$HERDR" pane move "$PANE" --tab "$target" --split "$split" --focus >/dev/null

@@ -25,6 +25,10 @@
 # Ignore tmux plugin installs (managed by TPM)
 tmux/plugins/
 
+# herdr config (keybindings ported from tmux)
+!herdr/
+!herdr/**
+
 # Claude Code config
 !claude/
 !claude/**

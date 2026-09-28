@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# Open the pkm vault in its own herdr tab (named 'pkm', cwd = the vault, running
+# nvim on it). Port of the tmux `prefix + P` / `M-P` bind: if a 'pkm' tab already
+# exists in the focused workspace, switch to it instead of opening a second one.
+#
+# A tab beats a pane (cramped for a whole vault) or a workspace (overkill) — pkm
+# gets the full window and `prefix + p` flips back.
+#
+# Vault path differs per machine: OneDrive on WSL (detected by the mount
+# existing), ~/pkm on macOS and Linux.
+
+set -euo pipefail
+
+HERDR="${HERDR_BIN_PATH:-herdr}"
+WSL_VAULT="/mnt/c/Users/patrick.fitzgerald/OneDrive - Juvare/Documents/juvare-pkm"
+
+if [ -d "$WSL_VAULT" ]; then
+  VAULT="$WSL_VAULT"
+else
+  VAULT="$HOME/pkm"
+fi
+
+# Reuse an existing pkm tab in the focused workspace if there is one.
+existing="$("$HERDR" tab list | jq -r 'first(.result.tabs[] | select(.label == "pkm") | .tab_id) // empty')"
+if [ -n "$existing" ]; then
+  exec "$HERDR" tab focus "$existing"
+fi
+
+pane="$("$HERDR" tab create --label pkm --cwd "$VAULT" --focus | jq -r '.result.root_pane.pane_id')"
+# `nvim .` rather than `nvim "$VAULT"` — the pane's cwd is already the vault, and
+# it sidesteps quoting the space in the WSL OneDrive path through pane run.
+"$HERDR" pane run "$pane" 'nvim .' >/dev/null

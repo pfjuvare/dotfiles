@@ -57,6 +57,11 @@ if ! command -v fzf &>/dev/null; then
   install_pkg fzf
 fi
 
+# Install jq (used by the bin/herdr-* helpers to read the herdr CLI's JSON)
+if ! command -v jq &>/dev/null; then
+  install_pkg jq
+fi
+
 # Install tmux
 if ! command -v tmux &>/dev/null; then
   install_pkg tmux
@@ -162,6 +167,32 @@ if ! command -v opencode &>/dev/null && [ ! -x "$HOME/.opencode/bin/opencode" ];
   curl -fsSL https://opencode.ai/install | bash
 fi
 
+# Install herdr (terminal workspace manager for AI coding agents; coexists with
+# tmux -- see herdr/config.toml for the keybindings ported from tmux.conf).
+if ! command -v herdr &>/dev/null; then
+  if [ "$PKG_MANAGER" = "brew" ]; then
+    install_pkg herdr
+  elif [[ "$(uname)" == "Linux" ]]; then
+    # Direct release binary rather than `curl -fsSL https://herdr.dev/install.sh | sh`
+    # (the documented install): the work proxy blocks .sh downloads.
+    case "$(uname -m)" in
+      x86_64 | amd64) herdr_arch="x86_64" ;;
+      aarch64 | arm64) herdr_arch="aarch64" ;;
+      *) herdr_arch="" ;;
+    esac
+    if [ -n "$herdr_arch" ]; then
+      echo "Installing herdr..."
+      mkdir -p "$HOME/.local/bin"
+      curl -fsSL -o "$HOME/.local/bin/herdr" \
+        "https://github.com/herdrdev/herdr/releases/latest/download/herdr-linux-${herdr_arch}"
+      chmod +x "$HOME/.local/bin/herdr"
+      echo "Installed herdr to ~/.local/bin/herdr (ensure ~/.local/bin is on PATH)."
+    else
+      echo "Warning: no herdr release binary for $(uname -m); skipping."
+    fi
+  fi
+fi
+
 # Install zsh-syntax-highlighting
 if [ "$PKG_MANAGER" = "brew" ]; then
   brew list zsh-syntax-highlighting &>/dev/null || brew install zsh-syntax-highlighting
@@ -225,6 +256,28 @@ ln -sfn "$DOTFILES/claude/hooks" "$HOME/.claude/hooks"
 mkdir -p "$HOME/.config/opencode"
 ln -sf "$DOTFILES/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 ln -sf "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
+
+# herdr config (keybindings ported from tmux -- see herdr/config.toml).
+# Symlink the FILE, not the directory: herdr also keeps its sockets, logs, and
+# session state in ~/.config/herdr, none of which belongs in this repo.
+mkdir -p "$HOME/.config/herdr"
+if [ -f "$HOME/.config/herdr/config.toml" ] && [ ! -L "$HOME/.config/herdr/config.toml" ]; then
+  echo "Backing up existing herdr config to ~/.config/herdr/config.toml.bak"
+  mv "$HOME/.config/herdr/config.toml" "$HOME/.config/herdr/config.toml.bak.$(date +%s)"
+fi
+ln -sf "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+
+# herdr's Claude Code integration: a SessionStart hook that reports agent state
+# (idle / working / blocked / done) so herdr's sidebar tracks Claude accurately.
+# It writes ~/.claude/hooks/herdr-agent-state.sh and the hook entry in
+# ~/.claude/settings.json -- both symlinked into this repo, so the change lands
+# here as a tracked diff. Installed only when missing, to avoid rewriting
+# settings.json on every run.
+if command -v herdr &>/dev/null; then
+  if ! herdr integration status 2>/dev/null | grep -q '^claude: current'; then
+    herdr integration install claude
+  fi
+fi
 
 echo ""
 echo "Done! Open a new terminal to start using zsh."

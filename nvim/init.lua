@@ -302,15 +302,23 @@ end, { desc = '[D]iff [F]iles' })
 -- Kept in sync with the same local in lua/custom/plugins/obsidian.lua.
 local vault_path = vim.fn.has 'wsl' == 1 and '/mnt/c/Users/patrick.fitzgerald/OneDrive - Juvare/Documents/juvare-pkm' or vim.fn.expand '~/pkm'
 
--- PJF: open the pkm vault in a NEW tmux window (named 'pkm', cwd the vault,
--- running nvim on it). A new window beats a pane (cramped for a whole vault) or
--- a session (overkill) -- pkm gets full-screen space and `prefix + l` flips back.
+-- PJF: open the pkm vault in a NEW tmux window / herdr tab (named 'pkm', cwd
+-- the vault, running nvim on it). A new window beats a pane (cramped for a
+-- whole vault) or a session (overkill) -- pkm gets full-screen space and
+-- `prefix + l` (tmux) / `prefix + p` (herdr) flips back.
+--
+-- Mirrors the multiplexer-level bind: tmux `prefix + P`, herdr `prefix + P`.
+-- Under herdr this defers to bin/herdr-pkm, which also reuses an existing pkm
+-- tab and knows the per-machine vault path (OneDrive on WSL).
 vim.keymap.set('n', '<leader>oP', function()
+  if vim.env.HERDR_ENV == '1' then
+    return vim.system { vim.fn.expand '~/dotfiles/bin/herdr-pkm' }
+  end
   if vim.env.TMUX == nil then
-    return vim.notify('Not inside tmux — cannot open a tmux window', vim.log.levels.WARN)
+    return vim.notify('Not inside tmux or herdr — cannot open a new window', vim.log.levels.WARN)
   end
   vim.fn.system { 'tmux', 'new-window', '-n', 'pkm', '-c', vault_path, 'nvim', vault_path }
-end, { desc = 'Obsidian: open pkm vault in new tmux window' })
+end, { desc = 'Obsidian: open pkm vault in new tmux window / herdr tab' })
 
 -- PJF: set NODE_EXTRA_CA_CERTS for npm-based tools (specifically github copilot in this case)
 -- seemingly necessary to get around juvare's corporate proxy which intercepts SSL traffic and causes certificate errors for npm-based tools
@@ -570,6 +578,55 @@ local function obsidian_cr_visual()
   end
 end
 
+-- PJF: unified C-hjkl navigation across nvim splits and the outer multiplexer's
+-- panes, in both tmux and herdr.
+--
+-- Under tmux, vim-tmux-navigator owns this: its tmux half binds C-hjkl with
+-- `bind -n`, checks whether the focused pane is running nvim, and forwards the
+-- keystroke here when it is. herdr has no conditional keybinding, so grabbing
+-- C-hjkl at the herdr level would cut nvim off from its own splits (and eat the
+-- shell's C-l / C-h). nvim drives it instead: move within nvim's splits first,
+-- and only when the cursor is already at the last split in that direction ask
+-- herdr to focus the neighbouring pane. Same keys, same feel, either way.
+--
+-- From a non-nvim pane (shell, agent) the herdr-level chords are ctrl+alt+hjkl
+-- or prefix+hjkl -- see herdr/config.toml.
+local herdr_directions = { h = 'left', j = 'down', k = 'up', l = 'right' }
+local tmux_commands = { h = 'Left', j = 'Down', k = 'Up', l = 'Right' }
+
+local function multiplexer_navigate(key)
+  if vim.env.HERDR_ENV ~= '1' then
+    return vim.cmd('TmuxNavigate' .. tmux_commands[key])
+  end
+  local from = vim.api.nvim_get_current_win()
+  vim.cmd.wincmd(key)
+  if vim.api.nvim_get_current_win() == from then
+    -- --current targets the calling pane via the HERDR_PANE_ID that herdr
+    -- injects into it; fire and forget, the focus change needs no reply.
+    vim.system { 'herdr', 'pane', 'focus', '--direction', herdr_directions[key], '--current' }
+  end
+end
+
+-- vim-tmux-navigator's "previous" jumps to the last tmux pane. herdr exposes no
+-- last-pane command over the CLI (only directional focus), so under herdr this
+-- degrades to nvim's own previous window; prefix+; / alt+; is the herdr-level
+-- last-pane bind.
+-- One prebuilt callback per direction, so the plugin spec's `keys` list below
+-- stays one short line per mapping.
+local multiplexer_nav = {}
+for key in pairs(herdr_directions) do
+  multiplexer_nav[key] = function()
+    multiplexer_navigate(key)
+  end
+end
+
+local function multiplexer_navigate_previous()
+  if vim.env.HERDR_ENV == '1' then
+    return vim.cmd.wincmd 'p'
+  end
+  vim.cmd 'TmuxNavigatePrevious'
+end
+
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
@@ -590,27 +647,6 @@ require('lazy').setup({
     'esmuellert/codediff.nvim',
     cmd = 'CodeDiff',
     opts = {},
-  },
-
-  -- PJF: vim-tmux-navigator -- unified C-hjkl navigation across nvim splits and
-  -- tmux panes (replaces the old manual <C-w>hjkl maps; tmux half is wired via TPM)
-  {
-    'christoomey/vim-tmux-navigator',
-    cmd = {
-      'TmuxNavigateLeft',
-      'TmuxNavigateDown',
-      'TmuxNavigateUp',
-      'TmuxNavigateRight',
-      'TmuxNavigatePrevious',
-      'TmuxNavigatorProcessList',
-    },
-    keys = {
-      { '<c-h>', '<cmd>TmuxNavigateLeft<cr>', desc = 'Navigate left (nvim split / tmux pane)' },
-      { '<c-j>', '<cmd>TmuxNavigateDown<cr>', desc = 'Navigate down (nvim split / tmux pane)' },
-      { '<c-k>', '<cmd>TmuxNavigateUp<cr>', desc = 'Navigate up (nvim split / tmux pane)' },
-      { '<c-l>', '<cmd>TmuxNavigateRight<cr>', desc = 'Navigate right (nvim split / tmux pane)' },
-      { '<c-\\>', '<cmd>TmuxNavigatePrevious<cr>', desc = 'Navigate to previous split/pane' },
-    },
   },
 
   -- PJF: obsidian.nvim for editing an Obsidian vault from Neovim
@@ -1640,9 +1676,17 @@ require('lazy').setup({
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- PJF: vim-tmux-navigator -- unified C-hjkl navigation across nvim splits and
-  -- tmux panes (replaces the old manual <C-w>hjkl maps; tmux half is wired via TPM)
+  -- tmux panes (replaces the old manual <C-w>hjkl maps; tmux half is wired via
+  -- TPM). Under herdr the plugin is not involved: multiplexer_navigate handles
+  -- the handoff itself via the herdr CLI.
   {
     'christoomey/vim-tmux-navigator',
+    -- The plugin installs its own <C-hjkl> maps on load, which would clobber the
+    -- `keys` maps below (and with them the herdr handoff and the insert-mode
+    -- variants) the moment lazy loads it. Let lazy own the mappings instead.
+    init = function()
+      vim.g.tmux_navigator_no_mappings = 1
+    end,
     cmd = {
       'TmuxNavigateLeft',
       'TmuxNavigateDown',
@@ -1652,11 +1696,13 @@ require('lazy').setup({
       'TmuxNavigatorProcessList',
     },
     keys = {
-      { '<c-h>', '<cmd>TmuxNavigateLeft<cr>', mode = { 'n', 'i' }, desc = 'Navigate left (nvim split / tmux pane)' },
-      { '<c-j>', '<cmd>TmuxNavigateDown<cr>', mode = { 'n', 'i' }, desc = 'Navigate down (nvim split / tmux pane)' },
-      { '<c-k>', '<cmd>TmuxNavigateUp<cr>', mode = { 'n', 'i' }, desc = 'Navigate up (nvim split / tmux pane)' },
-      { '<c-l>', '<cmd>TmuxNavigateRight<cr>', mode = { 'n', 'i' }, desc = 'Navigate right (nvim split / tmux pane)' },
-      { '<c-\\>', '<cmd>TmuxNavigatePrevious<cr>', mode = { 'n', 'i' }, desc = 'Navigate to previous split/pane' },
+      -- Routed through multiplexer_navigate (defined above lazy.setup) so the
+      -- same keys work under herdr, which needs nvim to drive the handoff.
+      { '<c-h>', multiplexer_nav.h, mode = { 'n', 'i' }, desc = 'Navigate left (nvim split / tmux-herdr pane)' },
+      { '<c-j>', multiplexer_nav.j, mode = { 'n', 'i' }, desc = 'Navigate down (nvim split / tmux-herdr pane)' },
+      { '<c-k>', multiplexer_nav.k, mode = { 'n', 'i' }, desc = 'Navigate up (nvim split / tmux-herdr pane)' },
+      { '<c-l>', multiplexer_nav.l, mode = { 'n', 'i' }, desc = 'Navigate right (nvim split / tmux-herdr pane)' },
+      { '<c-\\>', multiplexer_navigate_previous, mode = { 'n', 'i' }, desc = 'Navigate to previous split/pane' },
     },
   },
 

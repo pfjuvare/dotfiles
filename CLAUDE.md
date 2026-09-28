@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is a personal dotfiles repository (`~/dotfiles`), used across macOS (personal) and WSL/Windows (work). The primary content is a **kickstart.nvim**-based Neovim configuration with custom modifications, plus shell, tmux, and Claude Code config.
+This is a personal dotfiles repository (`~/dotfiles`), used across macOS (personal) and WSL/Windows (work). The primary content is a **kickstart.nvim**-based Neovim configuration with custom modifications, plus shell, tmux/herdr, and Claude Code config.
 
 ## opencode
 
@@ -17,6 +17,43 @@ This is a personal dotfiles repository (`~/dotfiles`), used across macOS (person
   - `opencode/tui.json` — theme (`tokyonight`, matching nvim) and TUI prefs.
 - **Auth** is one-time and not committed: `opencode auth login` → OpenRouter.
 - **Not ported:** Claude Code harness features with no opencode equivalent (voice, push notifications, Anthropic-shipped commands like `/code-review`, `/loop`), and the `claude/memory/` recall system (no native opencode equivalent — skipped for now).
+
+## herdr (tmux alternative)
+
+[herdr](https://herdr.dev) is a terminal workspace manager built around AI coding
+agents. It is installed **alongside** tmux, not as a replacement — both configs
+are live and either can be used.
+
+- `herdr/config.toml` — the config, symlinked to `~/.config/herdr/config.toml` by
+  `install.sh`. Note it symlinks the **file**, not the directory: herdr keeps its
+  sockets, logs, and session state in `~/.config/herdr` too.
+- Keybindings are a deliberate port of `tmux/tmux.conf` (prefix `C-Space`, the
+  same kill/split/jump/swap keys), so the muscle memory carries over. Every place
+  the port is imperfect is commented inline in `config.toml`.
+- Terminology: a tmux **window** is a herdr **tab**; a tmux **session** is a herdr
+  **workspace**.
+- `bin/herdr-pkm`, `bin/herdr-join-pane`, `bin/herdr-clone-tab` — the tmux binds
+  with no native herdr action (`prefix + P`, `prefix + J`, `prefix + C` /
+  `prefix + M-c`), wired up as `[[keys.command]]` entries. `herdr-clone-tab` talks
+  to the socket API directly (`layout.export` / `layout.apply`) because the CLI has
+  no layout subcommand.
+- `claude/hooks/herdr-agent-state.sh` + the `SessionStart` hook in
+  `claude/settings.json` are herdr's Claude Code integration (agent state in the
+  sidebar), installed by `herdr integration install claude`. Both files are
+  symlinked into this repo, so its edits land here as tracked diffs.
+- **C-hjkl navigation**: under tmux, vim-tmux-navigator's tmux half checks whether
+  the focused pane runs nvim and forwards the key. herdr has no conditional
+  binding, so nvim drives it instead — `multiplexer_navigate` in `nvim/init.lua`
+  moves within nvim's splits and calls `herdr pane focus` only at the edge. From a
+  non-nvim pane, use `ctrl+alt+hjkl` or `prefix+hjkl`.
+- **Not ported**: tmux's `send-prefix` (no literal `C-Space` passthrough, so nvim's
+  blink.cmp `<C-space>` is unreachable inside herdr), `display-panes` /
+  `M-!..M-(` indexed pane jumps, last-window / last-session, and the
+  `tdl`/`tds`/`tdlm`/`tsl` dev-layout functions in `zshrc` plus `bin/tmux-*`
+  (still tmux-only).
+- Docs for agents: `https://herdr.dev/llms.txt` (index), `herdr --skill` (pane and
+  agent control from inside a pane), `herdr config check` (validates
+  `config.toml` and reports which binding wins a conflict).
 
 ## Neovim Config Structure
 

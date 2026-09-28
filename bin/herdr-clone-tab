@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Clone the current herdr tab into a new tab.
+
+Port of the tmux `prefix + C` (tmux-clone-layout) and `prefix + M-c`
+(tmux-clone-window) binds:
+
+  herdr-clone-tab            layout + per-pane directories + commands
+  herdr-clone-tab --no-cwd   layout only (panes start in the default cwd)
+
+The herdr CLI has no layout subcommand, so this talks to the socket API
+directly: `layout.export` returns a portable BSP tree of the tab (split
+directions, ratios, per-pane cwd/label/command), and `layout.apply` builds a
+fresh tab from it. That makes the clone exact, unlike the tmux version which
+could only replay a saved layout string.
+
+Live PTYs, scrollback, and running processes are not carried over (herdr
+re-launches each pane's argv where one was recorded).
+"""
+
+import json
+import os
+import socket
+import sys
+
+STRIP_ALWAYS = ("pane_id",)
+
+
+def socket_path():
+    """Mirror herdr's own resolution order: explicit override, then session, then default."""
+    explicit = os.environ.get("HERDR_SOCKET_PATH")
+    if explicit:
+        return explicit
+    base = os.path.expanduser("~/.config/herdr")
+    session = os.environ.get("HERDR_SESSION")
+    if session:
+        return os.path.join(base, "sessions", session, "herdr.sock")
+    return os.path.join(base, "herdr.sock")
+
+
+def call(method, params=None):
+    """One request per connection — the server closes it after responding."""
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.connect(socket_path())
+    with sock, sock.makefile("rw") as stream:
+        stream.write(json.dumps({"id": "clone", "method": method, "params": params or {}}) + "\n")
+        stream.flush()
+        response = json.loads(stream.readline())
+    if "error" in response:
+        sys.exit("herdr-clone-tab: %s: %s" % (method, json.dumps(response["error"])))
+    return response["result"]
+
+
+def clean(node, keep_cwd):
+    """Drop identifiers that belong to the source tab so apply creates new panes."""
+    for key in STRIP_ALWAYS:
+        node.pop(key, None)
+    if not keep_cwd:
+        node.pop("cwd", None)
+        node.pop("command", None)
+    for branch in ("first", "second"):
+        if branch in node:
+            clean(node[branch], keep_cwd)
+    return node
+
+
+def main():
+    keep_cwd = "--no-cwd" not in sys.argv[1:]
+
+    # Omitting tab_id/pane_id exports the active tab; when we're running inside a
+    # pane (custom command keybinding) be explicit about which tab that is.
+    params = {}
+    pane = os.environ.get("HERDR_ACTIVE_PANE_ID") or os.environ.get("HERDR_PANE_ID")
+    if pane:
+        params["pane_id"] = pane
+
+    layout = call("layout.export", params)["layout"]
+    call(
+        "layout.apply",
+        {
+            "workspace_id": layout["workspace_id"],
+            "focus": True,
+            "root": clean(layout["root"], keep_cwd),
+        },
+    )
+
+
+if __name__ == "__main__":
+    main()
