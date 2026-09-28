@@ -1,15 +1,15 @@
 ---
 name: session-end
-description: Run the end-of-session ritual — update the Resume here block (Last session / Current focus / Next steps / Blockers) in the project's Obsidian hub note, plus append to Progress log and Decisions if warranted. Invoke when the user signals end of session explicitly ("wrap up", "end this session", "done for now", "let's stop") or implicitly ("thanks, that's all", "see you tomorrow", "I'm heading out"), when a significant unit of work completes with no implied follow-up (proactive — don't wait to be asked), or when the user asks for a checkpoint ("update resume", "checkpoint"). See ~/pkm/claude project hub note.md for the hub pattern.
+description: Run the end-of-session ritual — update the Resume here block (Last session / Current focus / Next steps / Blockers) in the project's Obsidian hub note, plus append to Progress log and Decisions if warranted. Invoke when the user signals end of session explicitly ("wrap up", "end this session", "done for now", "let's stop") or implicitly ("thanks, that's all", "see you tomorrow", "I'm heading out"), when a significant unit of work completes with no implied follow-up (proactive — don't wait to be asked), or when the user asks for a checkpoint ("update resume", "checkpoint"). See ~/obsidian-vault/claude project hub note.md for the hub pattern.
 ---
 
 # Session end ritual
 
-Updates the Obsidian hub note so a cold future session can resume without context loss. Only applies to projects following the hub-note pattern (see `~/pkm/claude project hub note.md`).
+Updates the Obsidian hub note so a cold future session can resume without context loss. Only applies to projects following the hub-note pattern (see `~/obsidian-vault/claude project hub note.md`).
 
 ## Steps
 
-1. **Locate the hub note.** Read the project's `CLAUDE.md` and find the "Long-term documentation hub" section — it names the exact path, e.g. `~/pkm/01 projects/01 active/<project>/<project>.md`. If the project has no such section, tell the user the pattern isn't set up yet and suggest running the bootstrap prompt from `~/pkm/claude project hub note.md`. Do not proceed.
+1. **Locate the hub note.** Read the project's `CLAUDE.md` and find the "Long-term documentation hub" section — it names the exact path, e.g. `~/obsidian-vault/01 projects/01 active/<project>/<project>.md`. If the project has no such section, tell the user the pattern isn't set up yet and suggest running the bootstrap prompt from `~/obsidian-vault/claude project hub note.md`. Do not proceed.
 
 2. **Read the hub note** so you know current Resume here / Tasks / Progress log / Decisions state.
 

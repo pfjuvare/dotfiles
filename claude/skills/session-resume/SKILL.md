@@ -1,15 +1,15 @@
 ---
 name: session-resume
-description: Orient at the start of a session by reading the Resume here block from the project's Obsidian hub note and surfacing Last session / Current focus / Next steps / Blockers to the user. Invoke when the user types /session-resume, /resume, "where did we leave off", "pick up where we left off", or at the start of any substantive session before diving into work. See ~/pkm/claude project hub note.md for the hub pattern.
+description: Orient at the start of a session by reading the Resume here block from the project's Obsidian hub note and surfacing Last session / Current focus / Next steps / Blockers to the user. Invoke when the user types /session-resume, /resume, "where did we leave off", "pick up where we left off", or at the start of any substantive session before diving into work. See ~/obsidian-vault/claude project hub note.md for the hub pattern.
 ---
 
 # Session resume ritual
 
-Orients Claude and the user at the start of a session using the Obsidian hub note. Only applies to projects following the hub-note pattern (see `~/pkm/claude project hub note.md`).
+Orients Claude and the user at the start of a session using the Obsidian hub note. Only applies to projects following the hub-note pattern (see `~/obsidian-vault/claude project hub note.md`).
 
 ## Steps
 
-1. **Locate the hub note.** Read the project's `CLAUDE.md` and find the "Long-term documentation hub" section — it names the exact path. If none is configured, tell the user the pattern isn't set up and suggest the bootstrap prompt in `~/pkm/claude project hub note.md`. Do not proceed.
+1. **Locate the hub note.** Read the project's `CLAUDE.md` and find the "Long-term documentation hub" section — it names the exact path. If none is configured, tell the user the pattern isn't set up and suggest the bootstrap prompt in `~/obsidian-vault/claude project hub note.md`. Do not proceed.
 
 2. **Read the hub note.** Focus on the `# Resume here` block — that's the load-bearing part. Skim the rest only if the user's likely next request needs it.
 

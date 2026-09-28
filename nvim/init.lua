@@ -294,15 +294,22 @@ vim.keymap.set('n', '<leader>df', function()
   end)
 end, { desc = '[D]iff [F]iles' })
 
--- PJF: open the pkm vault in a NEW tmux window (named 'pkm', cwd ~/pkm, running
--- nvim on the vault). A new window beats a pane (cramped for a whole vault) or a
--- session (overkill) -- pkm gets full-screen space and `prefix + l` flips back.
+-- PJF: the PKM vault lives in a different place per machine, and the WSL box is
+-- the one that matters day-to-day: the vault is the OneDrive-synced Windows
+-- folder, NOT ~/pkm (that path only exists on macOS -- writing to it under WSL
+-- just creates a stray unsynced directory). Resolve once and reuse for the
+-- <leader>oP tmux window, the conceallevel autocmd and the obsidian workspace.
+-- Kept in sync with the same local in lua/custom/plugins/obsidian.lua.
+local vault_path = vim.fn.has 'wsl' == 1 and '/mnt/c/Users/patrick.fitzgerald/OneDrive - Juvare/Documents/juvare-pkm' or vim.fn.expand '~/pkm'
+
+-- PJF: open the pkm vault in a NEW tmux window (named 'pkm', cwd the vault,
+-- running nvim on it). A new window beats a pane (cramped for a whole vault) or
+-- a session (overkill) -- pkm gets full-screen space and `prefix + l` flips back.
 vim.keymap.set('n', '<leader>oP', function()
   if vim.env.TMUX == nil then
     return vim.notify('Not inside tmux — cannot open a tmux window', vim.log.levels.WARN)
   end
-  local pkm = vim.fn.expand '~/pkm'
-  vim.fn.system { 'tmux', 'new-window', '-n', 'pkm', '-c', pkm, 'nvim', pkm }
+  vim.fn.system { 'tmux', 'new-window', '-n', 'pkm', '-c', vault_path, 'nvim', vault_path }
 end, { desc = 'Obsidian: open pkm vault in new tmux window' })
 
 -- PJF: set NODE_EXTRA_CA_CERTS for npm-based tools (specifically github copilot in this case)
@@ -348,7 +355,7 @@ vim.api.nvim_create_autocmd('User', {
 -- shows a pkm note in a window (initial read, new split, tmux-resurrect-restored
 -- windows) -- a markdown FileType autocmd alone misses splits and restored sessions.
 vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufWinEnter' }, {
-  pattern = vim.fn.expand '~/pkm' .. '/*.md',
+  pattern = vault_path .. '/*.md',
   callback = function()
     vim.opt_local.conceallevel = 2
   end,
@@ -458,7 +465,7 @@ end
 
 -- PJF: weekly notes. obsidian.nvim has no native weekly/periodic-notes feature
 -- (only daily_notes), so this is a small custom impl mirroring the daily flow
--- above. Notes live in ~/pkm/weekly notes/ named YYYY-MM-DD_weekly_note where the
+-- above. Notes live in `<vault>/weekly notes/` named YYYY-MM-DD_weekly_note where the
 -- date is the MONDAY of that week, so both Neovim and the desktop Periodic Notes
 -- plugin open/create the same files on the synced vault (match its weekly format
 -- 'YYYY-MM-DD_weekly_note' + folder 'weekly notes' to interoperate). No template.
@@ -668,7 +675,7 @@ require('lazy').setup({
         desc = 'Obsidian: next day note',
       },
       -- weekly notes (custom; see obsidian_open_weekly). Monday-anchored,
-      -- ~/pkm/weekly notes/YYYY-MM-DD_weekly_note.md. Braces step weeks, paralleling
+      -- <vault>/weekly notes/YYYY-MM-DD_weekly_note.md. Braces step weeks, paralleling
       -- the brackets that step days above.
       {
         '<leader>ow',
@@ -725,10 +732,10 @@ require('lazy').setup({
       workspaces = {
         {
           name = 'pkm',
-          path = '~/pkm',
+          path = vault_path,
         },
       },
-      -- PJF: daily notes -> ~/pkm/daily notes/YYYY-MM-DD.md (:Obsidian today/etc).
+      -- PJF: daily notes -> <vault>/daily notes/YYYY-MM-DD.md (:Obsidian today/etc).
       -- Existing history in that folder uses YYYYMMDD; new ones use YYYY-MM-DD.
       -- workdays_only defaults to true, which makes :Obsidian yesterday/tomorrow
       -- skip weekends (e.g. Monday's "yesterday" = Friday); set false for literal

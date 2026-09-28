@@ -25,10 +25,13 @@ This file applies to all projects and provides global guidance to Claude Code.
 - **Keep docs in sync with the change that triggered them.** When modifying a documented system or tool (Obsidian notes, CLAUDE.md files, READMEs, in-tool `--help` / usage text, memory files), update the relevant docs as part of the same change — don't defer to "later". Find every doc that references the thing you changed by searching for the feature/command/path/symbol name across likely locations (project docs, user-level CLAUDE.md, vault zettelkasten, memory dir). Skip only when the change is purely internal (refactor, dead-code removal, comment edits) and a doc reader wouldn't notice. If the doc surface to update is large or ambiguous, flag it and ask before sprawling.
 - **End-of-turn summaries: restate each question/task with its answer.** When PJF's prompt contains multiple questions or tasks (typically a bulleted or dashed list), the end-of-turn summary should briefly restate each item alongside what I did/answered. This means he can read the summary top-to-bottom without scrolling back to re-load the question context. One terse line per item is enough — keep prose minimal, but make the restatement explicit. Format: short paraphrase of the question/task in bold (or as the lead clause), then the answer/result on the same line or immediately below. For single-task prompts, the existing concise direct summary is fine — don't manufacture restatement when there's only one thing. See `<vault>/zettelkasten/claude - end-of-turn summary format.md` for the rationale and worked example.
 
-## Obsidian vault (`~/pkm`)
+## Obsidian vault
 
-- PJF's Obsidian vault lives at `~/pkm`. Existing top-level folders: `01 projects` (with `01 active` / `02 inactive` / `03 ideas` / `04 archived`), `02 zettelkasten`, `03 reference`, `04 daily-notes`, `05 archive`, `07 leetcode`.
-- **Default location for new notes**: the vault root (`~/pkm/`), unless the note belongs to a specific project — in which case place it inside that project's folder at `~/pkm/01 projects/01 active/<project>/`.
+- **Source of truth is the Windows-side vault**, synced by OneDrive:
+  `/mnt/c/Users/patrick.fitzgerald/OneDrive - Juvare/Documents/juvare-pkm`
+- **Access it from WSL via the symlink `~/obsidian-vault`** — use that path with `Read`/`Write`/`Glob`. There is deliberately **no `~/pkm` directory in WSL**; if one appears, it is a mistake (something wrote to a non-existent path and created it) — move the contents into the vault and remove it. On macOS only, the vault is the local `~/pkm`.
+- Existing top-level folders: `01 projects` (containing `01 active`), `zettelkasten`, `reference`, `01 daily-notes`, `02 weekly-notes`, `daily notes`, `meetings`, `people`, `attachments`.
+- **Default location for new notes**: the vault root (`~/obsidian-vault/`), unless the note belongs to a specific project — in which case place it inside that project's folder at `~/obsidian-vault/01 projects/01 active/<project>/`.
 - Each active project has its own folder containing a hub note (`<project>.md`) plus any sub-notes. Within a project folder, prefix sub-notes with the project name (`<project> - <topic>.md`) to avoid wikilink collisions across the vault.
 - Wikilinks in Obsidian resolve by filename, not path — so links like `[[pbudget]]` keep working regardless of folder location.
 
