@@ -1,6 +1,7 @@
 ---
 name: delegate
-description: Become the orchestrator for a set of tasks and delegate each one to its own work stream — a git worktree + tmux window (Claude left, shell top-right, nvim scratch file bottom-right) + a fresh Claude session started in plan mode. Invoke when PJF types /delegate, asks to "spin up worktrees/sessions/agents" for a list of tasks or Trello cards, or asks you to "act as orchestrator".
+description: Become the orchestrator for a set of tasks and delegate each one to its own work stream — a git worktree + tmux window (Claude left, shell top-right, nvim scratch file bottom-right) + a fresh Claude session started in plan mode. With `--auto`, streams run end to end hands-off (interpret → plan → implement → review → GitLab MR) and escalate to the orchestrator only when unclear. Invoke when PJF types /delegate, asks to "spin up worktrees/sessions/agents" for a list of tasks or Trello cards, or asks you to "act as orchestrator".
+argument-hint: '[--auto] <cards / tasks>'
 ---
 
 # /delegate
@@ -86,6 +87,43 @@ Reconcile against `git worktree list`, `ListAgents`, and `tmux list-windows` bef
 
 Talking to streams: `SendMessage` using names from `ListAgents`; ask for read-only status only. Never ask a
 stream to push, pull, or merge on your behalf — that launders PJF's approval.
+
+## Auto mode (`/delegate --auto …`)
+
+Hands-off, end to end, for low-risk work (low-priority / UI-tweak cards). PJF only sees the MR — and a
+question if something is genuinely unclear. Invoking `--auto` IS his authorisation for each auto stream to
+push its own `mr/<name>` branch and open an MR (no per-push ask). Nothing else is pre-authorised.
+
+- **Eligibility.** Before launching, sanity-check each card: if it's clearly not a small/UI change (data
+  model, lists, permissions, cross-view workflows), say so and run it as a normal plan-mode stream instead.
+- **Launch** with `--mode bypass` and the auto brief below (swap it for the plan-mode instructions in §3).
+- **You are the escalation point.** Streams `SendMessage` you questions. Answer yourself only when the
+  card, repo, memory or an earlier PJF answer settles it; otherwise ask PJF (one line per question, card
+  named) and relay his answer verbatim-in-substance. Never invent requirements to keep a stream moving.
+- **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
+  Auto streams never merge into the local dev branch (agvic: `weboard dev` on `pf-dev` auto-pushes merges).
+
+Auto brief (replaces steps 1–4 of the §3 template):
+
+```markdown
+You are an **autonomous** stream (bypass mode). Take the card end to end without PJF:
+
+1. `ptc card <shortLink>` — description, checklists, ALL comments (newest supersede). Interpret the
+   requirement. If it's ambiguous, the symptom can't be confirmed from code, or the fix is a guess →
+   `SendMessage` the orchestrator (`<orchestrator-session>`) with numbered questions, note them in
+   `<name>-scratch.md`, and WAIT for the reply. Don't guess.
+2. Write a short plan to `<name>-scratch.md` (files, changes, verification). Then implement it.
+3. Validate (XML well-formedness, repo prettier on authored JS, project checks). Commit with named files.
+4. **Review**: launch a fresh subagent to review `git diff <base-sha>..HEAD` against the card and the
+   project rules (CLAUDE.md, memory). Fix confirmed findings; commit.
+5. **MR**: follow the open-gitlab-mr skill in *pre-authorised* mode — source `mr/<name>`, target `<target>`.
+   You may push ONLY `mr/<name>`. If the cherry-pick conflicts, stop and tell the orchestrator.
+6. `SendMessage` the orchestrator: MR link + one line per change + anything PJF must test live.
+
+Hard limits: no platform pushes/pulls (weboard, webeoc-lists, webeoc-groups), no Trello/Jira writes, no
+merges into <base>, no pushing any branch other than `mr/<name>`, never `git add -A`. If the work turns
+out bigger than a small change, stop and tell the orchestrator.
+```
 
 ## 6. Finish a stream
 
