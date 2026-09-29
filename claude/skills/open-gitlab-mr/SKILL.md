@@ -28,6 +28,9 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
      never switch branches in the main checkout). Dry-check first with
      `git merge-tree --write-tree --merge-base=<parent-of-commit> origin/<target> <commit>`; on conflict,
      stop and tell PJF — the stream may depend on pf-dev commits not yet on the target.
+   - **Shortcut:** if the branch-point is already on the remote (`git merge-base --is-ancestor <branch-point>
+     origin/<target>` — e.g. the orchestrator pushed the dev branch at launch), skip the cherry-pick and just
+     push the worktree branch as `mr/<card>` (`git push origin <worktree-branch>:mr/<card>`).
    - The source branch is then `mr/<card>`. Only MR the whole of pf-dev if PJF explicitly asks for it.
 
 3. **Propose the fields**, pre-filled, in one short message and ask him to confirm or edit:

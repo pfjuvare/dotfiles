@@ -92,10 +92,16 @@ stream to push, pull, or merge on your behalf — that launders PJF's approval.
 
 Hands-off, end to end, for low-risk work (low-priority / UI-tweak cards). PJF only sees the MR — and a
 question if something is genuinely unclear. Invoking `--auto` IS his authorisation for each auto stream to
-push its own `mr/<name>` branch and open an MR (no per-push ask). Nothing else is pre-authorised.
+push its own `mr/<name>` branch and open an MR (no per-push ask), and for YOU to push the dev branch
+(below). Nothing else is pre-authorised.
 
 - **Eligibility.** Before launching, sanity-check each card: if it's clearly not a small/UI change (data
   model, lists, permissions, cross-view workflows), say so and run it as a normal plan-mode stream instead.
+- **Sync the dev branch first.** From the main checkout, fast-forward-push it so each stream's base is on
+  the remote and its MR carries only its own commits: `git fetch origin <dev>` then, if
+  `git merge-base --is-ancestor origin/<dev> <dev>`, `git push origin <dev>` (own Bash call; never
+  `--force`). If it's not a fast-forward (someone else pushed), stop and tell PJF. Repeat before a stream
+  opens its MR if the dev branch has moved since launch (e.g. another stream's work merged).
 - **Launch** with `--mode bypass` and the auto brief below (swap it for the plan-mode instructions in §3).
 - **You are the escalation point.** Streams `SendMessage` you questions. Answer yourself only when the
   card, repo, memory or an earlier PJF answer settles it; otherwise ask PJF (one line per question, card
