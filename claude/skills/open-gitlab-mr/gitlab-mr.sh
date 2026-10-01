@@ -7,6 +7,8 @@
 #   gitlab-mr.sh recent <source>               last 5 MRs from that branch (shows the usual target)
 #   gitlab-mr.sh create --source <b> --target <b> --title <t> [--description-file <f>]
 #                       [--draft] [--remove-source] [--dry-run]
+#   gitlab-mr.sh status <iid>                  state + merge status of an MR
+#   gitlab-mr.sh merge <iid>                   merge an MR (only when PJF has asked for that MR)
 #
 # Remote: `origin` (override with GITLAB_REMOTE). Host/project are derived from its URL
 # (ssh://git@host:port/group/proj.git, git@host:group/proj.git, https://host/group/proj.git).
@@ -91,5 +93,15 @@ case "$cmd" in
       --data-urlencode "remove_source_branch=$([ $rmsrc -eq 1 ] && echo true || echo false)" \
       | jq -r '"!\(.iid) created: \(.web_url)"'
     ;;
-  *) sed -n '2,14p' "$0"; exit 1 ;;
+  status)
+    [ $# -eq 1 ] || die "usage: status <iid>"
+    gl "$api/projects/$project/merge_requests/$1" \
+      | jq -r '"!\(.iid) \(.state) \(.detailed_merge_status) conflicts=\(.has_conflicts) \(.source_branch)→\(.target_branch)"'
+    ;;
+  merge)
+    [ $# -eq 1 ] || die "usage: merge <iid>"
+    gl -X PUT "$api/projects/$project/merge_requests/$1/merge" \
+      | jq -r '"!\(.iid) \(.state): \(.merge_commit_sha // .squash_commit_sha // "-")  \(.web_url)"'
+    ;;
+  *) sed -n '2,16p' "$0"; exit 1 ;;
 esac

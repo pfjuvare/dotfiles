@@ -57,6 +57,13 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
    ```
    Report the `!iid` and URL — one line.
 
+## Merging an MR
+
+Only when PJF asks to merge a specific MR (merging lands it on the shared target branch — outward-facing):
+`gitlab-mr.sh status <iid>` (must be `mergeable`, no conflicts), then `gitlab-mr.sh merge <iid>`. Then update the
+local target branch with `git fetch origin <target>` + `git merge --ff-only origin/<target>` in the main checkout.
+Never chain a platform push (e.g. `weboard push`) onto this — that's its own confirmation.
+
 ## Pre-authorised mode (auto delegate streams)
 
 When the stream's `STREAM-BRIEF.md` says it's an autonomous `/delegate --auto` stream, PJF has already
