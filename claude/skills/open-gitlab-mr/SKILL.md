@@ -57,6 +57,13 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
    ```
    Report the `!iid` and URL — one line.
 
+## WAF gotcha (gitlab.juvare.com)
+
+The AWS load balancer in front of gitlab.juvare.com 403s (HTML page, `server: awselb/2.0`) any request body with a
+quote directly followed by a dash — `'- User'`, `"- User"`, `" - User"` — it looks like an SQL-comment injection.
+Seen on the MR title. Never put `'` or `"` immediately before `-` in titles/descriptions; drop the quotes or use
+backticks. An HTML 403 (not GitLab JSON) = the WAF, not the token.
+
 ## Merging an MR
 
 Only when PJF asks to merge a specific MR (merging lands it on the shared target branch — outward-facing):
