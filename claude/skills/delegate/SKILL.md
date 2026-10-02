@@ -135,7 +135,9 @@ out bigger than a small change, stop and tell the orchestrator.
 
 1. Merge into the dev branch per PJF's confidence-gated rule (clean, well-defined → merge; debugging-heavy
    or unverified → ask first).
-2. If the work needs a merge request, invoke the **open-gitlab-mr** skill.
+2. If the work needs a merge request, invoke the **open-gitlab-mr** skill. Once PJF approves the MR, run its
+   automated post-approval flow (`merge-and-deploy.sh <iid>`: merge → fast-forward → targeted platform push)
+   without re-asking; then close the stream (step 3).
 3. Prune only when: `git rev-list --count <base>..<branch>` is 0, the worktree is clean (scratch files
    aside), and the stream confirms nothing is parked. Then `git worktree remove`, delete the branch, close
    the tmux window, and mark the stream `CLOSED` in the state file (keep the section).

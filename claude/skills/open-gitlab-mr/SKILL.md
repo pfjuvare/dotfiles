@@ -64,12 +64,28 @@ quote directly followed by a dash — `'- User'`, `"- User"`, `" - User"` — it
 Seen on the MR title. Never put `'` or `"` immediately before `-` in titles/descriptions; drop the quotes or use
 backticks. An HTML 403 (not GitLab JSON) = the WAF, not the token.
 
-## Merging an MR
+## Approved → merge, pull, deploy (automated)
 
-Only when PJF asks to merge a specific MR (merging lands it on the shared target branch — outward-facing):
-`gitlab-mr.sh status <iid>` (must be `mergeable`, no conflicts), then `gitlab-mr.sh merge <iid>`. Then update the
-local target branch with `git fetch origin <target>` + `git merge --ff-only origin/<target>` in the main checkout.
-Never chain a platform push (e.g. `weboard push`) onto this — that's its own confirmation.
+When PJF says an MR is approved / "merge it" / "looks fine", run the whole post-approval flow without
+re-asking at each step — his approval covers merge + fast-forward + targeted `weboard push`:
+
+```bash
+~/.claude/skills/open-gitlab-mr/merge-and-deploy.sh <iid> --dry-run   # show what will merge/push
+~/.claude/skills/open-gitlab-mr/merge-and-deploy.sh <iid>             # do it
+```
+
+Run from the repo's main checkout on the MR's target branch. It merges (skips if already merged), fast-forwards
+the local target branch, and `weboard push`es each board asset the MR's merge commit changed — one asset per
+call, from the board dir — after checking `weboard dev` isn't running. It stops without pushing on: tracked
+changes, non-mergeable MR, a local branch that can't fast-forward (local-only commits → merge by hand, tell
+PJF), `weboard dev` running, or any push not reporting success (push errors are never non-blocking).
+
+Still needs PJF's explicit go (the script lists them as "needs PJF" and doesn't push them): NEW assets (full push),
+`board-tables/` schema changes, `lists/` (webeoc-lists — destructive), and webeoc-groups changes (e.g. permission
+renames → re-grant; `push --overwrite` is non-atomic). Report: merged sha, assets pushed, needs-PJF items, and
+the MR's live test steps.
+
+Lower-level: `gitlab-mr.sh status <iid>` / `gitlab-mr.sh merge <iid>`.
 
 ## Pre-authorised mode (auto delegate streams)
 
