@@ -80,8 +80,8 @@ call, from the board dir — after checking `weboard dev` isn't running. It stop
 changes, non-mergeable MR, a local branch that can't fast-forward (local-only commits → merge by hand, tell
 PJF), `weboard dev` running, or any push not reporting success (push errors are never non-blocking).
 
-Still needs PJF's explicit go (the script lists them as "needs PJF" and doesn't push them): NEW assets (full push),
-`board-tables/` schema changes, `lists/` (webeoc-lists — destructive), and webeoc-groups changes (e.g. permission
+New assets push fine by name (resources are pushed before views). Still needs PJF's explicit go (the script lists
+them as "needs PJF" and doesn't push them): `board-tables/` schema changes, `lists/` (webeoc-lists — destructive), and webeoc-groups changes (e.g. permission
 renames → re-grant; `push --overwrite` is non-atomic). Report: merged sha, assets pushed, needs-PJF items, and
 the MR's live test steps.
 

@@ -12,8 +12,10 @@
 # Already-merged MRs skip the merge step. Stops (exit 1) without pushing when:
 #   the tree has tracked changes, the MR isn't mergeable, the local branch can't fast-forward,
 #   `weboard dev` is running, or any push doesn't report success.
-# NOT pushed automatically (listed as "needs PJF"): new assets (need a full push), board-tables/ (schema),
-# lists/ (webeoc-lists, destructive), and anything groups-related.
+# New assets push fine by name (needs their config.json sidecar). Board resources go first so views re-sync
+# against them (a view pushed before a new resource it references 403s until re-pushed).
+# NOT pushed automatically (listed as "needs PJF"): board-tables/ (schema), lists/ (webeoc-lists, destructive),
+# and anything groups-related (e.g. assigning new views to groups).
 set -euo pipefail
 
 die() { echo "merge-and-deploy: $*" >&2; exit 1; }
@@ -68,20 +70,27 @@ fi
 # 3. assets the MR changed (diff of its merge commit on the target branch)
 mc=$(git log --format=%H --merges -1 --grep="See merge request .*!$iid\$" "origin/$target") \
   || true
-[ -n "$mc" ] || die "can't find the merge commit for !$iid on origin/$target"
-push=() manual=()
+if [ -n "$mc" ]; then base="$mc^1" head="$mc"
+elif [ $dry -eq 1 ]; then                                   # not merged yet: preview from the MR's own diff
+  src=$(awk '{print $5}' <<<"$status"); src=${src%→*}
+  git fetch -q origin "$src"
+  base=$(git merge-base "origin/$target" "origin/$src") head="origin/$src"
+else die "can't find the merge commit for !$iid on origin/$target"; fi
+push=() res=() manual=()
 while IFS= read -r f; do
   rel=${f#"$board_dir"/}; [ "$rel" != "$f" ] || continue        # outside the board dir → not a platform asset
   kind=${rel%%/*}; rest=${rel#*/}; name=${rest%%/*}
   case "$kind" in
-    board-displays|board-inputs|board-resources)
-      if git cat-file -e "$mc^1:$board_dir/$kind/$name" 2>/dev/null; then push+=("$name")
-      else manual+=("$name (NEW asset — needs a full weboard push)"); fi ;;
+    board-resources) res+=("$name") ;;              # JS/CSS first, so views re-sync against them
+    board-displays|board-inputs) push+=("$name") ;;
     board-tables) manual+=("$name (table schema change)") ;;
     lists) manual+=("$rel (board list — webeoc-lists push)") ;;
   esac
-done < <(git diff --name-only "$mc^1" "$mc")
+done < <(git diff --name-only "$base" "$head")
+mapfile -t res < <(printf '%s\n' "${res[@]}" | sort -u | sed '/^$/d')
 mapfile -t push < <(printf '%s\n' "${push[@]}" | sort -u | sed '/^$/d')
+push=("${res[@]}" "${push[@]}")
+mapfile -t manual < <(printf '%s\n' "${manual[@]}" | sort -u | sed '/^$/d')
 
 echo "push:   ${push[*]:-(none)}"
 [ ${#manual[@]} -eq 0 ] || printf 'needs PJF: %s\n' "${manual[@]}"
