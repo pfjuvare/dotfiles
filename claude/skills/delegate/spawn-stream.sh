@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # spawn-stream.sh — open a delegated work stream: git worktree + tmux window + Claude session.
 #
-# Layout of the new tmux window (named <name>):
+# Layout of the new tmux window (named <name>-<desc>, or <name> without --desc):
 #   +-----------------+-----------------+
 #   |                 |  shell (wt cwd) |
 #   |  claude         +-----------------+
@@ -9,11 +9,13 @@
 #   +-----------------+-----------------+
 #
 # Usage:
-#   spawn-stream.sh <name> --brief <file> [--base <branch>] [--session <tmux-session>]
+#   spawn-stream.sh <name> --brief <file> [--desc <slug>] [--base <branch>] [--session <tmux-session>]
 #                   [--mode plan|bypass|default] [--prompt <text>]
 #
-#   <name>     window + worktree name, e.g. uat-3sJx4mjm. Worktree: <repo>/.claude/worktrees/<name>,
+#   <name>     stream id, e.g. uat-3sJx4mjm. Worktree: <repo>/.claude/worktrees/<name>,
 #              branch: worktree-<name> (the `claude -w` convention).
+#   --desc     tiny task tag appended to the tmux window name only, e.g. workshops ->
+#              window uat-3sJx4mjm-workshops. 1-2 words, kebab-case, max 12 chars.
 #   --brief    file copied to <worktree>/STREAM-BRIEF.md (the durable task brief). Required.
 #   --base     branch to cut from (default: the main checkout's current branch).
 #   --session  tmux session for the window (default: the current session).
@@ -26,16 +28,17 @@ set -euo pipefail
 
 die() { echo "spawn-stream: $*" >&2; exit 1; }
 
-name="" brief="" base="" session="" mode="plan"
+name="" desc="" brief="" base="" session="" mode="plan"
 prompt="Read STREAM-BRIEF.md in the worktree root and follow it."
 while [ $# -gt 0 ]; do
   case "$1" in
     --brief) brief="$2"; shift 2 ;;
+    --desc) desc="$2"; shift 2 ;;
     --base) base="$2"; shift 2 ;;
     --session) session="$2"; shift 2 ;;
     --mode) mode="$2"; shift 2 ;;
     --prompt) prompt="$2"; shift 2 ;;
-    -h|--help) sed -n '2,28p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,30p' "$0"; exit 0 ;;
     -*) die "unknown flag $1" ;;
     *) [ -z "$name" ] || die "unexpected arg $1"; name="$1"; shift ;;
   esac
@@ -43,6 +46,8 @@ done
 
 [ -n "$name" ] || die "name required"
 [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]] || die "name must be [A-Za-z0-9._-]"
+[ -z "$desc" ] || [[ "$desc" =~ ^[a-z0-9]+(-[a-z0-9]+)?$ && ${#desc} -le 12 ]] || die "--desc must be 1-2 kebab-case words, max 12 chars"
+window="$name${desc:+-$desc}"
 [ -n "$brief" ] && [ -f "$brief" ] || die "--brief <file> required"
 [[ "$prompt" != *"'"* ]] || die "--prompt must not contain single quotes"
 
@@ -57,7 +62,7 @@ if [ -z "$session" ]; then
   session=$(tmux display -p '#S')
 fi
 tmux has-session -t "$session" 2>/dev/null || die "tmux session '$session' not found"
-tmux list-windows -t "$session" -F '#{window_name}' | grep -qx "$name" && die "window '$name' already exists in $session"
+tmux list-windows -t "$session" -F '#{window_name}' | grep -qx "$window" && die "window '$window' already exists in $session"
 
 wt="$root/.claude/worktrees/$name"
 branch="worktree-$name"
@@ -83,7 +88,7 @@ cp "$brief" "$wt/STREAM-BRIEF.md"
 scratch="$wt/$name-scratch.md"
 printf '# %s — scratch\n\n' "$name" > "$scratch"
 
-left=$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n "$name" -c "$wt")
+left=$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n "$window" -c "$wt")
 right=$(tmux split-window -d -h -P -F '#{pane_id}' -t "$left" -c "$wt")
 bottom=$(tmux split-window -d -v -P -F '#{pane_id}' -t "$right" -c "$wt")
 sleep 0.5 # let the shells initialise before typing into them
@@ -94,4 +99,4 @@ tmux select-pane -t "$left"
 echo "stream   $name"
 echo "worktree $wt"
 echo "branch   $branch (from $base @ $(git -C "$root" rev-parse --short "$base"))"
-echo "window   $session:$name  (claude pane $left, mode $mode)"
+echo "window   $session:$window  (claude pane $left, mode $mode)"

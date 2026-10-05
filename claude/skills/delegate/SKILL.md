@@ -27,8 +27,11 @@ too — its project rules (state file, dev branch, ownership) take precedence ov
 - Trello card → `<prefix>-<shortLink>`, e.g. `uat-3sJx4mjm`. Prefix = the batch/category PJF uses
   (`uat`, `bug`, `feat`…); ask if not obvious.
 - No card → short kebab slug, e.g. `npm-policy`.
-- The name is used for the tmux window, the worktree dir (`.claude/worktrees/<name>`), the branch
-  (`worktree-<name>`), and the scratch file (`<name>-scratch.md`).
+- The name is used for the worktree dir (`.claude/worktrees/<name>`), the branch (`worktree-<name>`),
+  and the scratch file (`<name>-scratch.md`).
+- Also pick a **desc**: the most concise tag for the task — 1–2 kebab-case words, ≤12 chars, e.g.
+  `workshops`, `pass-expiry`. Passed as `--desc`, it's appended to the tmux window name only
+  (`uat-3sJx4mjm-workshops`) so the taskbar stays readable without crowding it.
 
 ## 3. Write the brief
 
@@ -64,7 +67,7 @@ the confirmed version in the brief.
 ## 4. Launch
 
 ```bash
-~/.claude/skills/delegate/spawn-stream.sh <name> --brief <scratchpad>/<name>.md [--base <branch>] [--mode plan]
+~/.claude/skills/delegate/spawn-stream.sh <name> --desc <desc> --brief <scratchpad>/<name>.md [--base <branch>] [--mode plan]
 ```
 
 Run from the repo's **main checkout**. Base defaults to the main checkout's current branch — check the
@@ -77,7 +80,7 @@ with the 3-pane layout, opens nvim on the scratch file, and starts Claude:
 - `--mode bypass`: straight to `--dangerously-skip-permissions` (only when the task is already fully planned).
 
 Launch several streams in one Bash loop. Then ~20s later confirm each started:
-`tmux capture-pane -p -t <session>:<name> | tail -5` (pane 1 is Claude).
+`tmux capture-pane -p -t <session>:<name>-<desc> | tail -5` (or the pane id the script prints) (pane 1 is Claude).
 
 ## 5. Track
 
