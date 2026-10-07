@@ -106,7 +106,7 @@ so ask unless pre-authorised):
 gitlab-mr.sh notify <iid> [--channel code-reviews] [--note "<one-line ask>"] [--dry-run]
 ```
 
-The card shows the MR title/link, repo, branches and author, plus a "Pat's agent wrote this message" footer.
+The card shows the MR title/link, repo, branches and author, plus a footer (`TEAMS_SIGNATURE` in the env file, e.g. "Pat's agent wrote this message").
 Webhook: a Teams Workflows "Send webhook alerts to a channel" URL in `~/.config/teams/<channel>.env`
 (`TEAMS_WEBHOOK_URL=...`, chmod 600); `code-reviews` is the only channel set up. Never paste the URL into
 chat or a tracked file. Pre-authorised streams post only if their `STREAM-BRIEF.md` names a channel.

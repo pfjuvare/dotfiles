@@ -10,7 +10,7 @@
 #
 # Usage:
 #   spawn-stream.sh <name> --brief <file> [--desc <slug>] [--base <branch>] [--session <tmux-session>]
-#                   [--mode plan|bypass|default] [--prompt <text>]
+#                   [--mode plan|bypass|default] [--prompt <text>] [--ui tmux|vscode]
 #
 #   <name>     stream id, e.g. uat-3sJx4mjm. Worktree: <repo>/.claude/worktrees/<name>,
 #              branch: worktree-<name> (the `claude -w` convention).
@@ -22,13 +22,16 @@
 #   --mode     plan (default): plan mode, bypass available via shift+tab / on plan approval.
 #              bypass: start straight in bypass. default: normal permission prompts.
 #   --prompt   first message (default: "Read STREAM-BRIEF.md in the worktree root and follow it.").
+#   --ui       tmux (default, or $DELEGATE_UI): the window above. vscode: opens the worktree in a new
+#              VS Code window and prints the claude command to run in its terminal.
+#   $SCRATCH_EDITOR  editor for the scratch pane in tmux mode (default nvim).
 #
 # Run from anywhere inside the repo's MAIN checkout.
 set -euo pipefail
 
 die() { echo "spawn-stream: $*" >&2; exit 1; }
 
-name="" desc="" brief="" base="" session="" mode="plan"
+name="" desc="" brief="" base="" session="" mode="plan" ui=${DELEGATE_UI:-tmux}
 prompt="Read STREAM-BRIEF.md in the worktree root and follow it."
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -38,7 +41,8 @@ while [ $# -gt 0 ]; do
     --session) session="$2"; shift 2 ;;
     --mode) mode="$2"; shift 2 ;;
     --prompt) prompt="$2"; shift 2 ;;
-    -h|--help) sed -n '2,30p' "$0"; exit 0 ;;
+    --ui) ui="$2"; shift 2 ;;
+    -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
     -*) die "unknown flag $1" ;;
     *) [ -z "$name" ] || die "unexpected arg $1"; name="$1"; shift ;;
   esac
@@ -50,6 +54,8 @@ done
 window="$name${desc:+-$desc}"
 [ -n "$brief" ] && [ -f "$brief" ] || die "--brief <file> required"
 [[ "$prompt" != *"'"* ]] || die "--prompt must not contain single quotes"
+case "$ui" in tmux|vscode) ;; *) die "--ui must be tmux|vscode" ;; esac
+[ "$ui" = tmux ] || command -v code >/dev/null || die "VS Code 'code' command not on PATH"
 
 root=$(git rev-parse --show-toplevel)
 common=$(git rev-parse --path-format=absolute --git-common-dir)
@@ -57,12 +63,14 @@ common=$(git rev-parse --path-format=absolute --git-common-dir)
 [ -n "$base" ] || base=$(git -C "$root" branch --show-current)
 git -C "$root" rev-parse --verify -q "$base" >/dev/null || die "base branch '$base' not found"
 
-if [ -z "$session" ]; then
+if [ "$ui" = tmux ] && [ -z "$session" ]; then
   [ -n "${TMUX:-}" ] || die "not inside tmux; pass --session"
   session=$(tmux display -p '#S')
 fi
-tmux has-session -t "$session" 2>/dev/null || die "tmux session '$session' not found"
-tmux list-windows -t "$session" -F '#{window_name}' | grep -qx "$window" && die "window '$window' already exists in $session"
+if [ "$ui" = tmux ]; then
+  tmux has-session -t "$session" 2>/dev/null || die "tmux session '$session' not found"
+  tmux list-windows -t "$session" -F '#{window_name}' | grep -qx "$window" && die "window '$window' already exists in $session"
+fi
 
 wt="$root/.claude/worktrees/$name"
 branch="worktree-$name"
@@ -88,11 +96,21 @@ cp "$brief" "$wt/STREAM-BRIEF.md"
 scratch="$wt/$name-scratch.md"
 printf '# %s — scratch\n\n' "$name" > "$scratch"
 
+if [ "$ui" = vscode ]; then
+  code -n "$wt" "$scratch"
+  echo "stream   $name"
+  echo "worktree $wt"
+  echo "branch   $branch (from $base @ $(git -C "$root" rev-parse --short "$base"))"
+  echo "vscode   new window opened; in its terminal run:"
+  echo "         $claude_cmd '$prompt'"
+  exit 0
+fi
+
 left=$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n "$window" -c "$wt")
 right=$(tmux split-window -d -h -P -F '#{pane_id}' -t "$left" -c "$wt")
 bottom=$(tmux split-window -d -v -P -F '#{pane_id}' -t "$right" -c "$wt")
 sleep 0.5 # let the shells initialise before typing into them
-tmux send-keys -t "$bottom" "nvim '$name-scratch.md'" Enter
+tmux send-keys -t "$bottom" "${SCRATCH_EDITOR:-nvim} '$name-scratch.md'" Enter
 tmux send-keys -t "$left" "$claude_cmd '$prompt'" Enter
 tmux select-pane -t "$left"
 

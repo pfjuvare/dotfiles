@@ -17,7 +17,8 @@
 # Token: $GITLAB_TOKEN, else GITLAB_TOKEN=... in ~/.config/gitlab/<host>.env (chmod 600).
 # Needs a personal access token with `api` scope: https://<host>/-/user_settings/personal_access_tokens
 # Teams: TEAMS_WEBHOOK_URL=... in ~/.config/teams/<channel>.env (default channel: code-reviews), a Teams
-# Workflows "Send webhook alerts to a channel" URL.
+# Workflows "Send webhook alerts to a channel" URL. Optional TEAMS_SIGNATURE=... (card footer; default
+# "<git user.name first name>'s agent wrote this message").
 set -euo pipefail
 
 die() { echo "gitlab-mr: $*" >&2; exit 1; }
@@ -123,7 +124,9 @@ case "$cmd" in
     [ -f "$teamsenv" ] || die "no $teamsenv — put TEAMS_WEBHOOK_URL=<workflows url> in it (chmod 600)"
     hook=$(sed -n 's/^TEAMS_WEBHOOK_URL=//p' "$teamsenv" | tr -d '"'"'"'')
     [ -n "$hook" ] || die "TEAMS_WEBHOOK_URL not set in $teamsenv"
-    card=$(gl "$api/projects/$project/merge_requests/$iid" | jq --arg path "$path" --arg note "$note" '{
+    sig=$(sed -n 's/^TEAMS_SIGNATURE=//p' "$teamsenv" | tr -d '"')
+    [ -n "$sig" ] || sig="$(git config user.name | cut -d' ' -f1)'s agent wrote this message"
+    card=$(gl "$api/projects/$project/merge_requests/$iid" | jq --arg path "$path" --arg note "$note" --arg sig "$sig" '{
       type: "message",
       attachments: [{
         contentType: "application/vnd.microsoft.card.adaptive",
@@ -138,7 +141,7 @@ case "$cmd" in
               { title: "Branch", value: "\(.source_branch) → \(.target_branch)" },
               { title: "Author", value: .author.name } ] }
           ] + (if $note == "" then [] else [{ type: "TextBlock", text: $note, wrap: true }] end) + [
-            { type: "TextBlock", text: "Pat'"'"'s agent wrote this message", isSubtle: true, size: "Small", wrap: true }
+            { type: "TextBlock", text: $sig, isSubtle: true, size: "Small", wrap: true }
           ]),
           actions: [{ type: "Action.OpenUrl", title: "Open MR", url: .web_url }]
         }

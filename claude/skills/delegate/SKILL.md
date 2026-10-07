@@ -67,8 +67,13 @@ the confirmed version in the brief.
 ## 4. Launch
 
 ```bash
-~/.claude/skills/delegate/spawn-stream.sh <name> --desc <desc> --brief <scratchpad>/<name>.md [--base <branch>] [--mode plan]
+~/.claude/skills/delegate/spawn-stream.sh <name> --desc <desc> --brief <scratchpad>/<name>.md [--base <branch>] [--mode plan] [--ui tmux|vscode]
 ```
+
+`--ui vscode` (or `DELEGATE_UI=vscode`) is for VS Code users: instead of a tmux window it opens the
+worktree + scratch file in a new VS Code window and prints the `claude` command; tell the user to run it in
+that window's terminal (the script can't start it there). Skip the `tmux capture-pane` check below and
+confirm via `ListAgents` instead.
 
 Run from the repo's **main checkout**. Base defaults to the main checkout's current branch — check the
 project CLAUDE.md/memory for the correct dev branch (agvic: `pf-dev`). The script creates the worktree +
@@ -135,6 +140,14 @@ Hard limits: no platform pushes/pulls (weboard, webeoc-lists, webeoc-groups), no
 merges into <base>, no pushing any branch other than `mr/<name>`, never `git add -A`. If the work turns
 out bigger than a small change, stop and tell the orchestrator.
 ```
+
+## Testing on the platform (why streams commit so often)
+
+A worktree's edits never reach the platform on their own. The user tests by running `weboard dev` (the file
+watcher) over the board in the **main checkout**, so a change only goes live once it's committed in the
+worktree and fast-forward-merged into the dev branch there. So each stream commits after every change the
+user wants to try, and the orchestrator/stream merges it per the confidence rule below; the merge is the
+deploy only while `weboard dev` is running. If a merged change isn't live, check the watcher first.
 
 ## 6. Finish a stream
 
