@@ -48,12 +48,17 @@ You are in **plan mode**. Do NOT edit files or implement anything yet.
 
 1. Fetch the card with `ptc card <shortLink>` — description, checklists, ALL comments (newest often
    supersede the description).
-2. Investigate the relevant code in this worktree (read-only).
-3. Decide:
+2. *(Optional — include for defects / behaviour changes; omit for pure build tasks or if PJF opts out)*
+   **Repro flow first.** Before investigating a fix, give PJF a concise testing flow for the problem AS IT
+   STANDS: account/position + incident to use, numbered steps, expected vs actual (from the card, in your
+   words). Add one line of how you read the problem. Then STOP and wait for him to confirm or correct it —
+   this is to get his bearings and agree on the problem before any planning.
+3. Investigate the relevant code in this worktree (read-only).
+4. Decide:
    - **Clear problem, confident fix** → concrete plan (files, changes, verification) via ExitPlanMode.
    - **Unclear / can't confirm symptom or cause** → do NOT guess. Summarise what you understood, what's
      unclear, and the specific questions for PJF. He'll work with you directly.
-4. Be concise.
+5. Be concise.
 
 <confirmed requirements from PJF, if any — state them as requirements, not suggestions>
 
@@ -63,6 +68,9 @@ in parallel (<list names>): flag any file you'd touch that another stream is lik
 
 When PJF has already given you requirements for a task, confirm your understanding with him first, then put
 the confirmed version in the brief.
+
+Step 2 (repro flow) is plan-mode only and on by default for defects; drop it for build/feature tasks or when PJF
+says skip (e.g. `/delegate --no-repro`). Auto mode never includes it — auto streams don't wait on PJF.
 
 ## 4. Launch
 
