@@ -55,7 +55,7 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
    gitlab-mr.sh create --source <s> --target <t> --title "<title>" --description-file <f> [--draft] [--remove-source] --dry-run
    gitlab-mr.sh create --source <s> --target <t> --title "<title>" --description-file <f> [--draft] [--remove-source]
    ```
-   Report the `!iid` and URL — one line.
+   Report the `!iid` and URL — one line — then offer the Teams post (see "Teams review request").
 
 ## WAF gotcha (gitlab.juvare.com)
 
