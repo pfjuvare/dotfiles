@@ -9,11 +9,15 @@
 #                       [--draft] [--remove-source] [--dry-run]
 #   gitlab-mr.sh status <iid>                  state + merge status of an MR
 #   gitlab-mr.sh merge <iid>                   merge an MR (only when PJF has asked for that MR)
+#   gitlab-mr.sh notify <iid> [--channel <c>] [--note <text>] [--dry-run]
+#                                              post a review request card for the MR to a Teams channel
 #
 # Remote: `origin` (override with GITLAB_REMOTE). Host/project are derived from its URL
 # (ssh://git@host:port/group/proj.git, git@host:group/proj.git, https://host/group/proj.git).
 # Token: $GITLAB_TOKEN, else GITLAB_TOKEN=... in ~/.config/gitlab/<host>.env (chmod 600).
 # Needs a personal access token with `api` scope: https://<host>/-/user_settings/personal_access_tokens
+# Teams: TEAMS_WEBHOOK_URL=... in ~/.config/teams/<channel>.env (default channel: code-reviews), a Teams
+# Workflows "Send webhook alerts to a channel" URL.
 set -euo pipefail
 
 die() { echo "gitlab-mr: $*" >&2; exit 1; }
@@ -103,5 +107,47 @@ case "$cmd" in
     gl -X PUT "$api/projects/$project/merge_requests/$1/merge" \
       | jq -r '"!\(.iid) \(.state): \(.merge_commit_sha // .squash_commit_sha // "-")  \(.web_url)"'
     ;;
-  *) sed -n '2,16p' "$0"; exit 1 ;;
+  notify)
+    iid="" channel=code-reviews note="" dry=0
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --channel) channel="$2"; shift 2 ;;
+        --note) note="$2"; shift 2 ;;
+        --dry-run) dry=1; shift ;;
+        -*) die "unknown flag $1" ;;
+        *) iid="$1"; shift ;;
+      esac
+    done
+    [ -n "$iid" ] || die "usage: notify <iid> [--channel <c>] [--note <text>] [--dry-run]"
+    teamsenv="$HOME/.config/teams/$channel.env"
+    [ -f "$teamsenv" ] || die "no $teamsenv — put TEAMS_WEBHOOK_URL=<workflows url> in it (chmod 600)"
+    hook=$(sed -n 's/^TEAMS_WEBHOOK_URL=//p' "$teamsenv" | tr -d '"'"'"'')
+    [ -n "$hook" ] || die "TEAMS_WEBHOOK_URL not set in $teamsenv"
+    card=$(gl "$api/projects/$project/merge_requests/$iid" | jq --arg path "$path" --arg note "$note" '{
+      type: "message",
+      attachments: [{
+        contentType: "application/vnd.microsoft.card.adaptive",
+        content: {
+          "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+          type: "AdaptiveCard", version: "1.4", msteams: { width: "Full" },
+          body: ([
+            { type: "TextBlock", text: "Code review request", weight: "Bolder", size: "Medium" },
+            { type: "TextBlock", text: "[!\(.iid) \(.title)](\(.web_url))", wrap: true },
+            { type: "FactSet", facts: [
+              { title: "Repo", value: ($path | split("/") | last) },
+              { title: "Branch", value: "\(.source_branch) → \(.target_branch)" },
+              { title: "Author", value: .author.name } ] }
+          ] + (if $note == "" then [] else [{ type: "TextBlock", text: $note, wrap: true }] end) + [
+            { type: "TextBlock", text: "Pat'"'"'s agent wrote this message", isSubtle: true, size: "Small", wrap: true }
+          ]),
+          actions: [{ type: "Action.OpenUrl", title: "Open MR", url: .web_url }]
+        }
+      }]
+    }')
+    if [ $dry -eq 1 ]; then echo "channel $channel"; echo "$card"; exit 0; fi
+    curl -sS --fail-with-body -H 'Content-Type: application/json' -d "$card" "$hook" >/dev/null \
+      || die "Teams webhook rejected the post"
+    echo "!$iid posted to Teams ($channel)"
+    ;;
+  *) sed -n '2,20p' "$0"; exit 1 ;;
 esac

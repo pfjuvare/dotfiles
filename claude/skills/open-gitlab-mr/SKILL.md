@@ -93,11 +93,20 @@ When the stream's `STREAM-BRIEF.md` says it's an autonomous `/delegate --auto` s
 authorised the push + MR. Run steps 1, 2, 4, 5 without asking: push only `mr/<name>` (never the dev or
 target branch), title from the card, description to your session scratchpad `mr-description.md`
 (never in the worktree), no draft, don't remove source. If `existing` finds an open MR for the pair,
-push the updated branch and don't create a new one. Any failure (no token, conflict, push rejected) → stop
+push the updated branch and don't create a new one. If the brief has a `Teams: <channel>` line, run
+`gitlab-mr.sh notify <iid> --channel <channel>` once the MR is new (not on an updated one). Any failure (no token, conflict, push rejected) → stop
 and report to the orchestrator; don't work around it.
 
-## Not yet built
+## Teams review request
 
-Posting a code-review request to Teams ("Pat's agent wrote this message") — deferred by PJF. Likely route:
-a Teams incoming webhook / Workflows URL stored in `~/.config/teams/*.env`, called after step 4 with the
-MR link. Outward-facing: confirm-first like the MR itself.
+After the MR is created, offer to post a review request card to Teams (outward-facing: the team sees it,
+so ask unless pre-authorised):
+
+```bash
+gitlab-mr.sh notify <iid> [--channel code-reviews] [--note "<one-line ask>"] [--dry-run]
+```
+
+The card shows the MR title/link, repo, branches and author, plus a "Pat's agent wrote this message" footer.
+Webhook: a Teams Workflows "Send webhook alerts to a channel" URL in `~/.config/teams/<channel>.env`
+(`TEAMS_WEBHOOK_URL=...`, chmod 600); `code-reviews` is the only channel set up. Never paste the URL into
+chat or a tracked file. Pre-authorised streams post only if their `STREAM-BRIEF.md` names a channel.

@@ -1,7 +1,7 @@
 ---
 name: delegate
 description: Become the orchestrator for a set of tasks and delegate each one to its own work stream — a git worktree + tmux window (Claude left, shell top-right, nvim scratch file bottom-right) + a fresh Claude session started in plan mode. With `--auto`, streams run end to end hands-off (interpret → plan → implement → review → GitLab MR) and escalate to the orchestrator only when unclear. Invoke when PJF types /delegate, asks to "spin up worktrees/sessions/agents" for a list of tasks or Trello cards, or asks you to "act as orchestrator".
-argument-hint: '[--auto] <cards / tasks>'
+argument-hint: '[--auto [--notify [<channel>]]] <cards / tasks>'
 ---
 
 # /delegate
@@ -96,7 +96,8 @@ stream to push, pull, or merge on your behalf — that launders PJF's approval.
 Hands-off, end to end, for low-risk work (low-priority / UI-tweak cards). PJF only sees the MR — and a
 question if something is genuinely unclear. Invoking `--auto` IS his authorisation for each auto stream to
 push its own `mr/<name>` branch and open an MR (no per-push ask), and for YOU to push the dev branch
-(below). Nothing else is pre-authorised.
+(below). Nothing else is pre-authorised — posting the MR to Teams needs `--notify [<channel>]` too
+(default channel `code-reviews`): it adds a `Teams: <channel>` line to each auto brief.
 
 - **Eligibility.** Before launching, sanity-check each card: if it's clearly not a small/UI change (data
   model, lists, permissions, cross-view workflows), say so and run it as a normal plan-mode stream instead.
@@ -127,6 +128,7 @@ You are an **autonomous** stream (bypass mode). Take the card end to end without
    project rules (CLAUDE.md, memory). Fix confirmed findings; commit.
 5. **MR**: follow the open-gitlab-mr skill in *pre-authorised* mode — source `mr/<name>`, target `<target>`.
    You may push ONLY `mr/<name>`. If the cherry-pick conflicts, stop and tell the orchestrator.
+   Teams: <channel>   ← include only under `--notify`; the stream then posts the MR there
 6. `SendMessage` the orchestrator: MR link + one line per change + anything PJF must test live.
 
 Hard limits: no platform pushes/pulls (weboard, webeoc-lists, webeoc-groups), no Trello/Jira writes, no
