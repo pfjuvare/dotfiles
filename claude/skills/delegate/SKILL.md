@@ -190,9 +190,12 @@ deploy only while `weboard dev` is running. If a merged change isn't live, check
 2. If the work needs a merge request, invoke the **open-gitlab-mr** skill. Once PJF approves the MR, run its
    automated post-approval flow (`merge-and-deploy.sh <iid>`: merge → fast-forward → targeted platform push)
    without re-asking; then close the stream (step 3).
-3. Prune only when: `git rev-list --count <base>..<branch>` is 0, the worktree is clean (scratch files
-   aside), and the stream confirms nothing is parked. Then `git worktree remove`, delete the branch, close
-   the tmux window, and mark the stream `CLOSED` in the state file (keep the section).
+3. Prune only when: the work is merged (for MR streams, check the MR, since `mr/<name>` is cherry-picked),
+   `test-push status` shows no claims for it, the worktree is clean (scratch files aside), and its
+   `<name>-scratch.md` has no parked or open items (read it; carry live ones into the project's open list).
+   Then close the tmux window, `git worktree remove`, delete the local branch, mark the stream `CLOSED` in the
+   state file (keep the section), and log it wherever the project records completed work. The project's
+   orchestrator skill may have a fuller checklist (agvic: orchestrate → "Closing a stream").
 
 ## Reporting to PJF
 
