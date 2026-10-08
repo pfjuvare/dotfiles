@@ -18,20 +18,21 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
    token into chat.
 
 2. **Scope = the stream's commits only (default).** When the MR is for a worktree stream / card, it must
-   carry ONLY that stream's commits — never the whole dev branch (e.g. agvic `pf-dev`, which holds other
+   carry ONLY that stream's commits — never the whole dev branch (whatever the project's dev branch is — it may hold other
    streams' unreviewed work). Pushing the worktree branch as-is does NOT achieve this: it was branched
-   off pf-dev, so it inherits every pf-dev commit not yet on the target. Instead:
+   off the dev branch, so it inherits every dev-branch commit not yet on the target. Instead:
    - Stream commits = `git log --no-merges <branch-point>..<worktree-branch>`, where branch-point is
-     `git merge-base <worktree-branch> pf-dev` *as recorded at stream start* (STREAM-BRIEF "off pf-dev @
-     <sha>") — after a fast-forward merge into pf-dev the merge-base is the stream tip, so use the brief.
+     `git merge-base <worktree-branch> <dev>` *as recorded at stream start* (STREAM-BRIEF "off <dev> @
+     <sha>") — after a fast-forward merge into the dev branch the merge-base is the stream tip, so use the brief.
    - Build `mr/<card>` off `origin/<target>` and cherry-pick those commits (use a throwaway worktree —
      never switch branches in the main checkout). Dry-check first with
      `git merge-tree --write-tree --merge-base=<parent-of-commit> origin/<target> <commit>`; on conflict,
-     stop and tell PJF — the stream may depend on pf-dev commits not yet on the target.
+     stop and tell PJF — the stream may depend on dev-branch commits not yet on the target.
    - **Shortcut:** if the branch-point is already on the remote (`git merge-base --is-ancestor <branch-point>
      origin/<target>` — e.g. the orchestrator pushed the dev branch at launch), skip the cherry-pick and just
      push the worktree branch as `mr/<card>` (`git push origin <worktree-branch>:mr/<card>`).
-   - The source branch is then `mr/<card>`. Only MR the whole of pf-dev if PJF explicitly asks for it.
+   - The source branch is then `mr/<card>`. Only MR the whole dev branch if PJF explicitly asks for it. (agvic: streams branch off `dev` and
+     target `dev`, so the shortcut normally applies.)
 
 3. **Propose the fields**, pre-filled, in one short message and ask him to confirm or edit:
    - **Source branch** — the `mr/<card>` branch from step 2 (or the current branch for non-stream work).
