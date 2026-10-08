@@ -84,7 +84,7 @@ that window's terminal (the script can't start it there). Skip the `tmux capture
 confirm via `ListAgents` instead.
 
 Run from the repo's **main checkout**. Base defaults to the main checkout's current branch — check the
-project CLAUDE.md/memory for the correct dev branch (agvic: `pf-dev`). The script creates the worktree +
+project CLAUDE.md/memory for the correct dev branch (agvic: `dev`). The script creates the worktree +
 branch, git-excludes `STREAM-BRIEF.md` and `/*-scratch.md`, opens the window in the current tmux session
 with the 3-pane layout, opens nvim on the scratch file, and starts Claude:
 
@@ -108,8 +108,8 @@ stream to push, pull, or merge on your behalf — that launders PJF's approval.
 
 Hands-off, end to end, for low-risk work (low-priority / UI-tweak cards). PJF only sees the MR — and a
 question if something is genuinely unclear. Invoking `--auto` IS his authorisation for each auto stream to
-push its own `mr/<name>` branch and open an MR (no per-push ask), and for YOU to push the dev branch
-(below). Nothing else is pre-authorised — posting the MR to Teams needs `--notify [<channel>]` too
+push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to push the dev branch
+(below), and for YOU to test-push each stream's build when it reports ready (see "Pre-MR test push"). Nothing else is pre-authorised — posting the MR to Teams needs `--notify [<channel>]` too
 (default channel `code-reviews`): it adds a `Teams: <channel>` line to each auto brief.
 
 - **Eligibility.** Before launching, sanity-check each card: if it's clearly not a small/UI change (data
@@ -123,8 +123,11 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), and for YOU to
 - **You are the escalation point.** Streams `SendMessage` you questions. Answer yourself only when the
   card, repo, memory or an earlier PJF answer settles it; otherwise ask PJF (one line per question, card
   named) and relay his answer verbatim-in-substance. Never invent requirements to keep a stream moving.
+- **Ready to test** = the stream sends you its test flow. Run `test-push.sh push <name>` (dry-run first),
+  record status `testing`, and send PJF the test flow. Relay his result: fixes → the stream commits and
+  tells you → re-push; go → tell the stream to open its MR.
 - **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
-  Auto streams never merge into the local dev branch (agvic: `weboard dev` on `pf-dev` auto-pushes merges).
+  Auto streams never merge into the local dev branch (if `weboard dev` watches it, a merge auto-pushes).
 
 Auto brief (replaces steps 1–4 of the §3 template):
 
@@ -139,15 +142,38 @@ You are an **autonomous** stream (bypass mode). Take the card end to end without
 3. Validate (XML well-formedness, repo prettier on authored JS, project checks). Commit with named files.
 4. **Review**: launch a fresh subagent to review `git diff <base-sha>..HEAD` against the card and the
    project rules (CLAUDE.md, memory). Fix confirmed findings; commit.
-5. **MR**: follow the open-gitlab-mr skill in *pre-authorised* mode — source `mr/<name>`, target `<target>`.
+5. **Test gate**: `SendMessage` the orchestrator "ready to test" + a concise test flow (position, steps,
+   expected) + any table/list change PJF must push himself. WAIT. The orchestrator test-pushes your
+   committed build and PJF tests it. Fixes come back through the orchestrator: fix, commit, tell it
+   (it re-pushes). Only on PJF's go → step 6. Never push to the platform yourself.
+6. **MR**: follow the open-gitlab-mr skill in *pre-authorised* mode — source `mr/<name>`, target `<target>`.
    You may push ONLY `mr/<name>`. If the cherry-pick conflicts, stop and tell the orchestrator.
    Teams: <channel>   ← include only under `--notify`; the stream then posts the MR there
-6. `SendMessage` the orchestrator: MR link + one line per change + anything PJF must test live.
+7. `SendMessage` the orchestrator: MR link + one line per change.
 
 Hard limits: no platform pushes/pulls (weboard, webeoc-lists, webeoc-groups), no Trello/Jira writes, no
 merges into <base>, no pushing any branch other than `mr/<name>`, never `git add -A`. If the work turns
 out bigger than a small change, stop and tell the orchestrator.
 ```
+
+## Pre-MR test push (`test-push.sh`)
+
+Streams are tested on the platform from their own worktree before any MR, so a misread card is caught
+before review. `~/.claude/skills/delegate/test-push.sh` (run from the main checkout; `--help`):
+
+- `push <name> [--dry-run]` — targeted `weboard push` of every asset the stream changed vs its merge-base
+  with dev (resources → `Util - Schema - *` → views), from the worktree. Records a **claim** per asset in
+  `.git/test-slots.tsv`.
+- `status` — what's on the platform right now, per stream. Check it before telling PJF what he's testing.
+- `release <name> [--restore]` — drop the claims; `--restore` re-pushes dev's version (rejected/abandoned).
+- Merging is the normal release: `merge-and-deploy.sh` re-pushes the merged assets from dev and clears
+  their claims.
+
+**One live version per asset, not one worktree at a time.** Streams touching disjoint assets can be under
+test together. `push` refuses an asset another stream claims (test → merge/release that one first), and
+refuses when dev changed an asset since the stream branched (pushing would revert dev's work live — have
+the stream `git merge dev` first). Tables and lists are listed, never pushed: PJF does those, before views.
+Pushing is pre-authorised in `--auto` mode; otherwise ask PJF. Either way the script checks `weboard dev`.
 
 ## Testing on the platform (why streams commit so often)
 

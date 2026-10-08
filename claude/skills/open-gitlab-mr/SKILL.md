@@ -35,7 +35,7 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
 
 3. **Propose the fields**, pre-filled, in one short message and ask him to confirm or edit:
    - **Source branch** — the `mr/<card>` branch from step 2 (or the current branch for non-stream work).
-   - **Target branch** — default to wherever this source branch's previous MRs went (agvic: `pf-dev` →
+   - **Target branch** — default to wherever this source branch's previous MRs went (agvic: stream MRs →
      `dev`, NOT `main`). Look it up: `gitlab-mr.sh recent <source>`. Else the project default branch.
    - **Title** — from the card title / commit subjects; imperative, ≤ 72 chars.
    - **Description** — draft from `git log --no-merges origin/<target>..<source>` (after step 2 this is only the stream's commits) and any Trello card: summary,
@@ -80,7 +80,8 @@ call, from the board dir — after checking `weboard dev` isn't running. It stop
 changes, non-mergeable MR, a local branch that can't fast-forward (local-only commits → merge by hand, tell
 PJF), `weboard dev` running, or any push not reporting success (push errors are never non-blocking).
 
-New assets push fine by name (resources are pushed before views). Still needs PJF's explicit go (the script lists
+New assets push fine by name (order: resources → `Util - Schema - *` views → other views). It also clears any
+`delegate/test-push.sh` claims on the assets it pushed, warning if another stream's test build is overwritten. Still needs PJF's explicit go (the script lists
 them as "needs PJF" and doesn't push them): `board-tables/` schema changes, `lists/` (webeoc-lists — destructive), and webeoc-groups changes (e.g. permission
 renames → re-grant; `push --overwrite` is non-atomic). Report: merged sha, assets pushed, needs-PJF items, and
 the MR's live test steps.

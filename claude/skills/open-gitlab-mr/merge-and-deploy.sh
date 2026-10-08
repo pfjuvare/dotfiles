@@ -12,8 +12,10 @@
 # Already-merged MRs skip the merge step. Stops (exit 1) without pushing when:
 #   the tree has tracked changes, the MR isn't mergeable, the local branch can't fast-forward,
 #   `weboard dev` is running, or any push doesn't report success.
-# New assets push fine by name (needs their config.json sidecar). Board resources go first so views re-sync
-# against them (a view pushed before a new resource it references 403s until re-pushed).
+# New assets push fine by name (needs their config.json sidecar). Order: board resources (so views re-sync
+# against them — a view pushed before a new resource it references 403s), then `Util - Schema - *` views
+# (new columns), then the rest. Clears ../delegate/test-push.sh claims on what it pushed (warns if another
+# stream's test build gets overwritten).
 # NOT pushed automatically (listed as "needs PJF"): board-tables/ (schema), lists/ (webeoc-lists, destructive),
 # and anything groups-related (e.g. assigning new views to groups).
 set -euo pipefail
@@ -27,7 +29,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --board-dir) board_dir="$2"; shift 2 ;;
     --dry-run) dry=1; shift ;;
-    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
     -*) die "unknown flag $1" ;;
     *) [ -z "$iid" ] || die "unexpected arg $1"; iid="$1"; shift ;;
   esac
@@ -76,23 +78,33 @@ elif [ $dry -eq 1 ]; then                                   # not merged yet: pr
   git fetch -q origin "$src"
   base=$(git merge-base "origin/$target" "origin/$src") head="origin/$src"
 else die "can't find the merge commit for !$iid on origin/$target"; fi
-push=() res=() manual=()
+push=() res=() schema=() manual=()
 while IFS= read -r f; do
   rel=${f#"$board_dir"/}; [ "$rel" != "$f" ] || continue        # outside the board dir → not a platform asset
   kind=${rel%%/*}; rest=${rel#*/}; name=${rest%%/*}
   case "$kind" in
     board-resources) res+=("$name") ;;              # JS/CSS first, so views re-sync against them
-    board-displays|board-inputs) push+=("$name") ;;
+    board-displays|board-inputs)
+      case "$name" in "Util - Schema - "*) schema+=("$name") ;; *) push+=("$name") ;; esac ;;   # new columns first
     board-tables) manual+=("$name (table schema change)") ;;
     lists) manual+=("$rel (board list — webeoc-lists push)") ;;
   esac
 done < <(git diff --name-only "$base" "$head")
 mapfile -t res < <(printf '%s\n' "${res[@]}" | sort -u | sed '/^$/d')
+mapfile -t schema < <(printf '%s\n' "${schema[@]}" | sort -u | sed '/^$/d')
 mapfile -t push < <(printf '%s\n' "${push[@]}" | sort -u | sed '/^$/d')
-push=("${res[@]}" "${push[@]}")
+push=("${res[@]}" "${schema[@]}" "${push[@]}")
 mapfile -t manual < <(printf '%s\n' "${manual[@]}" | sort -u | sed '/^$/d')
 
 echo "push:   ${push[*]:-(none)}"
+# test-push.sh claims (pre-MR test builds on the platform): this deploy supersedes them
+slots="$root/.git/test-slots.tsv" tp="$here/../delegate/test-push.sh"
+src_stream=$(awk '{print $5}' <<<"$status"); src_stream=${src_stream%→*}; src_stream=${src_stream#mr/}
+if [ -s "$slots" ]; then
+  for a in "${push[@]}"; do
+    awk -F'\t' -v a="$a" -v s="$src_stream" '$1==a && $2!=s{print "warning: "a" is under test from "$2" — this deploy overwrites it; re-run test-push.sh push "$2}' "$slots"
+  done
+fi
 [ ${#manual[@]} -eq 0 ] || printf 'needs PJF: %s\n' "${manual[@]}"
 [ $dry -eq 0 ] || exit 0
 [ ${#push[@]} -gt 0 ] || exit 0
@@ -105,4 +117,5 @@ for a in "${push[@]}"; do
   echo "$out" | grep -F "🟢" | grep -v "Logged out" || true
   echo "$out" | grep -qF "$a successfully pushed" || { echo "$out"; die "push of $a didn't report success"; }
 done
+[ ! -s "$slots" ] || [ ! -x "$tp" ] || "$tp" clear "${push[@]}"
 echo "deployed !$iid: ${#push[@]} asset(s)"
