@@ -159,7 +159,7 @@ out bigger than a small change, stop and tell the orchestrator.
 ## Pre-MR test push (`test-push.sh`)
 
 Streams are tested on the platform from their own worktree before any MR, so a misread card is caught
-before review. `~/.claude/skills/delegate/test-push.sh` (run from the main checkout; `--help`):
+before review. `~/.claude/skills/delegate/test-push.sh` (on PJF's PATH as `test-push` via a `~/.local/bin` symlink; run from the main checkout; `--help`):
 
 - `push <name> [--dry-run]` — targeted `weboard push` of every asset the stream changed vs its merge-base
   with dev (resources → `Util - Schema - *` → views), from the worktree. Records a **claim** per asset in
