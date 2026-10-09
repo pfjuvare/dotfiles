@@ -10,6 +10,10 @@ You are the **orchestrator**. You split the work into streams, brief each one, l
 **do not implement** — every edit belongs to exactly one stream's worktree. Your own writes are limited to
 briefs, the state file, memory/Obsidian, and git plumbing (merge / worktree prune) on the main checkout.
 
+The orchestrator session itself comes from **`/start-orchestrator`**: a window in the main checkout with the
+stream layout (shell | Claude 50% | nvim scratch), bypass mode, opening on `/orchestrate` (or `/delegate`).
+`--here` re-lays-out the current window.
+
 If the repo has its own orchestrator skill (e.g. agvic's `.claude/skills/orchestrate/SKILL.md`), invoke it
 too — its project rules (state file, dev branch, ownership) take precedence over the generic ones here.
 
