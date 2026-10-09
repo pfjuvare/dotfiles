@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Become the orchestrator for a set of tasks and delegate each one to its own work stream — a git worktree + tmux window (Claude left, shell top-right, nvim scratch file bottom-right) + a fresh Claude session. Every stream runs one pipeline (plan → implement → subagent review → pre-MR test push → GitLab MR → merge-and-deploy → live re-test); regular mode starts in plan mode with PJF checkpoints (repro flow, plan approval), `--auto` runs hands-off in bypass and escalates to the orchestrator only when unclear. Invoke when PJF types /delegate, asks to "spin up worktrees/sessions/agents" for a list of tasks or Trello cards, or asks you to "act as orchestrator".
+description: Become the orchestrator for a set of tasks and delegate each one to its own work stream — a git worktree + tmux window (three columns: shell left, Claude centre at 50%, nvim scratch file right) + a fresh Claude session. Every stream runs one pipeline (plan → implement → subagent review → pre-MR test push → GitLab MR → merge-and-deploy → live re-test); regular mode starts in plan mode with PJF checkpoints (repro flow, plan approval), `--auto` runs hands-off in bypass and escalates to the orchestrator only when unclear. Invoke when PJF types /delegate, asks to "spin up worktrees/sessions/agents" for a list of tasks or Trello cards, or asks you to "act as orchestrator".
 argument-hint: '[--auto [--notify [<channel>]]] <cards / tasks>'
 ---
 
@@ -79,7 +79,9 @@ You are in **plan mode**. Do NOT edit files or implement anything yet.
    he must push himself, and `SendMessage` the orchestrator (`<orchestrator-session>`) "ready to test" + the
    same flow. The orchestrator test-pushes your committed build once PJF says go. Fix → commit → tell it.
 8. **MR** on PJF's go after testing: follow the open-gitlab-mr skill (source `mr/<name>`, target `<target>`,
-   its description template). `SendMessage` the orchestrator the MR link.
+   its description template). Once it's created, **offer PJF the Teams post** (open-gitlab-mr "Teams review
+   request"), even when the go came relayed through the orchestrator. `SendMessage` the orchestrator the MR
+   link and whether it was posted to Teams.
 9. Be concise.
 
 <confirmed requirements from PJF, if any — state them as requirements, not suggestions>
@@ -116,7 +118,7 @@ with the 3-pane layout, opens nvim on the scratch file, and starts Claude:
 - `--mode bypass`: straight to `--dangerously-skip-permissions` (only when the task is already fully planned).
 
 Launch several streams in one Bash loop. Then ~20s later confirm each started:
-`tmux capture-pane -p -t <session>:<name>-<desc> | tail -5` (or the pane id the script prints) (pane 1 is Claude).
+`tmux capture-pane -p -t <claude pane id> | tail -5`. Use the claude pane id the script prints, never a pane index: Claude is the middle column, not pane 1.
 
 ## 5. Track
 
@@ -151,6 +153,7 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to pus
   he already has the flow in the stream's pane.) Relay his result: fixes → the stream commits and
   tells you → re-push; go → tell the stream to open its MR.
 - **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
+  Regular stream that didn't post to Teams → offer PJF the post in that line (`gitlab-mr.sh notify <iid>`).
   Streams never merge into the local dev branch (if `weboard dev` watches it, a merge auto-pushes).
 - **Sync the dev branch for regular streams too** (their MRs need the same clean base) — but there the
   `git push origin <dev>` isn't pre-authorised: ask PJF first.

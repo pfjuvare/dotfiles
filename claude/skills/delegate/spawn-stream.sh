@@ -2,11 +2,12 @@
 # spawn-stream.sh — open a delegated work stream: git worktree + tmux window + Claude session.
 #
 # Layout of the new tmux window (named <name>-<desc>, or <name> without --desc):
-#   +-----------------+-----------------+
-#   |                 |  shell (wt cwd) |
-#   |  claude         +-----------------+
-#   |                 |  nvim <name>-scratch.md
-#   +-----------------+-----------------+
+#   +---------+-------------------+---------+
+#   |         |                   |  nvim   |
+#   |  shell  |  claude (50%)     | <name>- |
+#   | (wt cwd)|                   | scratch |
+#   +---------+-------------------+---------+
+#   Sides split the other 50% evenly. Target the claude pane by the id printed below, not by index.
 #
 # Usage:
 #   spawn-stream.sh <name> --brief <file> [--desc <slug>] [--base <branch>] [--session <tmux-session>]
@@ -42,7 +43,7 @@ while [ $# -gt 0 ]; do
     --mode) mode="$2"; shift 2 ;;
     --prompt) prompt="$2"; shift 2 ;;
     --ui) ui="$2"; shift 2 ;;
-    -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,30p' "$0"; exit 0 ;;
     -*) die "unknown flag $1" ;;
     *) [ -z "$name" ] || die "unexpected arg $1"; name="$1"; shift ;;
   esac
@@ -106,15 +107,15 @@ if [ "$ui" = vscode ]; then
   exit 0
 fi
 
-left=$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n "$window" -c "$wt")
-right=$(tmux split-window -d -h -P -F '#{pane_id}' -t "$left" -c "$wt")
-bottom=$(tmux split-window -d -v -P -F '#{pane_id}' -t "$right" -c "$wt")
+claude=$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n "$window" -c "$wt")
+scratch_pane=$(tmux split-window -d -h -l 25% -P -F '#{pane_id}' -t "$claude" -c "$wt")   # right: 25%
+shell=$(tmux split-window -d -h -b -l 33% -P -F '#{pane_id}' -t "$claude" -c "$wt")       # left: 1/3 of 75% = 25%
 sleep 0.5 # let the shells initialise before typing into them
-tmux send-keys -t "$bottom" "${SCRATCH_EDITOR:-nvim} '$name-scratch.md'" Enter
-tmux send-keys -t "$left" "$claude_cmd '$prompt'" Enter
-tmux select-pane -t "$left"
+tmux send-keys -t "$scratch_pane" "${SCRATCH_EDITOR:-nvim} '$name-scratch.md'" Enter
+tmux send-keys -t "$claude" "$claude_cmd '$prompt'" Enter
+tmux select-pane -t "$claude"
 
 echo "stream   $name"
 echo "worktree $wt"
 echo "branch   $branch (from $base @ $(git -C "$root" rev-parse --short "$base"))"
-echo "window   $session:$window  (claude pane $left, mode $mode)"
+echo "window   $session:$window  (claude pane $claude, shell $shell, scratch $scratch_pane; mode $mode)"

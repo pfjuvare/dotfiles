@@ -56,7 +56,8 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
    gitlab-mr.sh create --source <s> --target <t> --title "<title>" --description-file <f> [--draft] [--remove-source] --dry-run
    gitlab-mr.sh create --source <s> --target <t> --title "<title>" --description-file <f> [--draft] [--remove-source]
    ```
-   Report the `!iid` and URL — one line — then offer the Teams post (see "Teams review request").
+   Report the `!iid` and URL — one line — then **always** offer the Teams post (see "Teams review request"),
+   including when PJF's go was relayed by an orchestrator.
 
 ## MR description template
 
@@ -81,15 +82,16 @@ Tables / lists / groups: name them here as separate manual steps (not weboard).
 ## How to test
 1. Position + incident, then numbered steps, each with the expected result. Keep it short.
 
-## Out of scope        ← optional: what wasn't done, stated as fact
 Card: <trello link>
 ````
 
 Keep the `## How to test` heading exactly: `merge-and-deploy.sh` replays that section after it deploys.
 
-**MRs are colleague-facing.** Call him **Patrick** (never "PJF"). Leave out conversation context: no "pending
-Patrick's decision", "as discussed", "per our chat", or questions addressed to him. Saying something is out of
-scope or wasn't implemented is fine — state it as a fact about the change. Same rule for `notify --note`.
+**MRs are colleague-facing.** Call him **Patrick** (never "PJF"). The description covers ONLY what this MR
+changes: no "Out of scope" / "Follow-ups" / "Not done" sections, and no mention of related, deferred or future
+work. Those stay between Patrick and the orchestrator until there's an MR they apply to. Also no conversation
+context ("pending Patrick's decision", "as discussed", "per our chat", questions to him). Same rule for
+`notify --note`.
 
 ## WAF gotcha (gitlab.juvare.com)
 
