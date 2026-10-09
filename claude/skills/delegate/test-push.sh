@@ -74,7 +74,9 @@ case "$cmd" in
     for a in "${push[@]}"; do
       owner=$(awk -F'\t' -v a="$a" '$1==a{print $2}' "$slots")
       [ -z "$owner" ] || [ "$owner" = "$stream" ] || bad+=("$a — claimed by $owner")
-      git -C "$main" diff --quiet "$mb" "$dev" -- "$board_rel/board-*/$a" \
+      # literal dir pathspecs: a glob like board-*/<asset> must match the whole file path, so it never matched
+      git -C "$main" diff --quiet "$mb" "$dev" -- ":(literal)$board_rel/board-displays/$a" \
+          ":(literal)$board_rel/board-inputs/$a" ":(literal)$board_rel/board-resources/$a" \
         || bad+=("$a — changed on $dev since $stream branched (git merge $dev in the worktree)")
     done
     echo "$stream @ $(git -C "$wt" log --oneline -1 HEAD)"
