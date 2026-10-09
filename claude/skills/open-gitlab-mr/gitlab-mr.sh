@@ -8,6 +8,8 @@
 #   gitlab-mr.sh create --source <b> --target <b> --title <t> [--description-file <f>]
 #                       [--draft] [--remove-source] [--dry-run]
 #   gitlab-mr.sh status <iid>                  state + merge status of an MR
+#   gitlab-mr.sh description <iid> [--section <heading>]
+#                                              print the MR description (or one `## <heading>` section)
 #   gitlab-mr.sh merge <iid>                   merge an MR (only when PJF has asked for that MR)
 #   gitlab-mr.sh notify <iid> [--channel <c>] [--note <text>] [--dry-run]
 #                                              post a review request card for the MR to a Teams channel
@@ -103,6 +105,25 @@ case "$cmd" in
     gl "$api/projects/$project/merge_requests/$1" \
       | jq -r '"!\(.iid) \(.state) \(.detailed_merge_status) conflicts=\(.has_conflicts) \(.source_branch)→\(.target_branch)"'
     ;;
+  description)
+    iid="" section=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --section) section="$2"; shift 2 ;;
+        -*) die "unknown flag $1" ;;
+        *) iid="$1"; shift ;;
+      esac
+    done
+    [ -n "$iid" ] || die "usage: description <iid> [--section <heading>]"
+    desc=$(gl "$api/projects/$project/merge_requests/$iid" | jq -r '.description // ""')
+    if [ -z "$section" ]; then printf '%s\n' "$desc"; exit 0; fi
+    # body of `## <heading>` (case-insensitive) up to the next heading / Card: / footer; exit 1 if absent
+    awk -v h="$section" 'BEGIN{h=tolower(h)}
+      /^#+ /{ t=tolower($0); sub(/^#+ +/,"",t); sub(/ +$/,"",t); on=(t==h); found=found||on; next }
+      /^(Card:|🤖)/{ on=0 }
+      on { buf=buf $0 "\n"; if ($0 != "") { printf "%s", buf; buf="" } }
+      END{ exit !found }' <<<"$desc"
+    ;;
   merge)
     [ $# -eq 1 ] || die "usage: merge <iid>"
     gl -X PUT "$api/projects/$project/merge_requests/$1/merge" \
@@ -152,5 +173,5 @@ case "$cmd" in
       || die "Teams webhook rejected the post"
     echo "!$iid posted to Teams ($channel)"
     ;;
-  *) sed -n '2,20p' "$0"; exit 1 ;;
+  *) sed -n '2,22p' "$0"; exit 1 ;;
 esac

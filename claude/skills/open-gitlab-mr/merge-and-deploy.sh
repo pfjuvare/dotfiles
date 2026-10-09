@@ -17,7 +17,8 @@
 # (new columns), then the rest. Clears ../delegate/test-push.sh claims on what it pushed (warns if another
 # stream's test build gets overwritten).
 # NOT pushed automatically (listed as "needs PJF"): board-tables/ (schema), lists/ (webeoc-lists, destructive),
-# and anything groups-related (e.g. assigning new views to groups).
+# and groups/*.json at the repo root (webeoc-groups push — non-atomic) or any other groups change.
+# Finally prints the MR description's "How to test" (or "Test steps") section for the live re-test.
 set -euo pipefail
 
 die() { echo "merge-and-deploy: $*" >&2; exit 1; }
@@ -29,7 +30,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --board-dir) board_dir="$2"; shift 2 ;;
     --dry-run) dry=1; shift ;;
-    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,21p' "$0"; exit 0 ;;
     -*) die "unknown flag $1" ;;
     *) [ -z "$iid" ] || die "unexpected arg $1"; iid="$1"; shift ;;
   esac
@@ -80,6 +81,7 @@ elif [ $dry -eq 1 ]; then                                   # not merged yet: pr
 else die "can't find the merge commit for !$iid on origin/$target"; fi
 push=() res=() schema=() manual=()
 while IFS= read -r f; do
+  case "$f" in groups/*.json) manual+=("$f (group — webeoc-groups push, non-atomic)"); continue ;; esac
   rel=${f#"$board_dir"/}; [ "$rel" != "$f" ] || continue        # outside the board dir → not a platform asset
   kind=${rel%%/*}; rest=${rel#*/}; name=${rest%%/*}
   case "$kind" in
@@ -106,8 +108,16 @@ if [ -s "$slots" ]; then
   done
 fi
 [ ${#manual[@]} -eq 0 ] || printf 'needs PJF: %s\n' "${manual[@]}"
-[ $dry -eq 0 ] || exit 0
-[ ${#push[@]} -gt 0 ] || exit 0
+# the MR's own test steps, replayed for the live re-test after deploy
+test_steps() {
+  local t
+  t=$("$gl" description "$iid" --section "How to test" 2>/dev/null) \
+    || t=$("$gl" description "$iid" --section "Test steps" 2>/dev/null) || t=""
+  if [ -n "$t" ]; then printf -- '--- how to test (!%s)\n%s\n' "$iid" "$t"
+  else echo "--- no How to test section in !$iid"; fi
+}
+[ $dry -eq 0 ] || { test_steps; exit 0; }
+[ ${#push[@]} -gt 0 ] || { test_steps; exit 0; }
 
 # 4. targeted pushes
 ps -eo args | grep -qiE '^[^ ]*(node[^ ]* )?[^ ]*weboard[^ ]* dev( |$)' && die "weboard dev is running — not pushing"
@@ -119,3 +129,4 @@ for a in "${push[@]}"; do
 done
 [ ! -s "$slots" ] || [ ! -x "$tp" ] || "$tp" clear "${push[@]}"
 echo "deployed !$iid: ${#push[@]} asset(s)"
+test_steps

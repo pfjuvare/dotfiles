@@ -34,7 +34,8 @@ weboard_running() { ps -eo args | grep -qiE '^[^ ]*(node[^ ]* )?[^ ]*weboard[^ ]
 
 # assets <repo-dir> <base> <head> → "kind<TAB>name" lines (kind: res|schema|view|manual)
 assets() {
-  git -C "$1" diff --name-only "$2" "$3" -- "$board_rel" | while IFS= read -r f; do
+  git -C "$1" diff --name-only "$2" "$3" -- "$board_rel" groups | while IFS= read -r f; do
+    case "$f" in groups/*.json) printf 'manual\t%s\n' "$f"; continue ;; esac   # webeoc-groups, non-atomic
     rel=${f#"$board_rel"/}; kind=${rel%%/*}; rest=${rel#*/}; name=${rest%%/*}
     case "$kind" in
       board-resources) printf 'res\t%s\n' "$name" ;;

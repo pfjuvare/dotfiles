@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Become the orchestrator for a set of tasks and delegate each one to its own work stream — a git worktree + tmux window (Claude left, shell top-right, nvim scratch file bottom-right) + a fresh Claude session started in plan mode. With `--auto`, streams run end to end hands-off (interpret → plan → implement → review → GitLab MR) and escalate to the orchestrator only when unclear. Invoke when PJF types /delegate, asks to "spin up worktrees/sessions/agents" for a list of tasks or Trello cards, or asks you to "act as orchestrator".
+description: Become the orchestrator for a set of tasks and delegate each one to its own work stream — a git worktree + tmux window (Claude left, shell top-right, nvim scratch file bottom-right) + a fresh Claude session. Every stream runs one pipeline (plan → implement → subagent review → pre-MR test push → GitLab MR → merge-and-deploy → live re-test); regular mode starts in plan mode with PJF checkpoints (repro flow, plan approval), `--auto` runs hands-off in bypass and escalates to the orchestrator only when unclear. Invoke when PJF types /delegate, asks to "spin up worktrees/sessions/agents" for a list of tasks or Trello cards, or asks you to "act as orchestrator".
 argument-hint: '[--auto [--notify [<channel>]]] <cards / tasks>'
 ---
 
@@ -35,8 +35,21 @@ too — its project rules (state file, dev branch, ownership) take precedence ov
 
 ## 3. Write the brief
 
-Write it to your scratchpad, then pass it to the spawn script (it lands as `STREAM-BRIEF.md` in the
-worktree root — durable even if a cross-session message is lost). Template:
+**One pipeline, two modes.** Every stream runs the same pipeline: interpret → plan → implement → validate →
+subagent review → **test gate** (test-push of the worktree build) → MR `mr/<name>` → approval →
+merge-and-deploy → live re-test. The modes differ only in the **checkpoints**:
+
+| | regular `/delegate` | `/delegate --auto` |
+|---|---|---|
+| session | plan mode, PJF in the pane | bypass, runs alone |
+| repro flow (defects) | yes, waits for PJF | no |
+| plan approval | ExitPlanMode, PJF approves | written to scratch, no wait |
+| questions | asked in the pane | SendMessage orchestrator → relayed |
+| test-push | orchestrator, after PJF says go | orchestrator, pre-authorised |
+| MR | open-gitlab-mr, PJF confirms fields | pre-authorised (+ Teams under `--notify`) |
+
+Write the brief to your scratchpad, then pass it to the spawn script (it lands as `STREAM-BRIEF.md` in the
+worktree root — durable even if a cross-session message is lost). Regular template:
 
 ```markdown
 # Stream brief — <name>
@@ -58,11 +71,21 @@ You are in **plan mode**. Do NOT edit files or implement anything yet.
    - **Clear problem, confident fix** → concrete plan (files, changes, verification) via ExitPlanMode.
    - **Unclear / can't confirm symptom or cause** → do NOT guess. Summarise what you understood, what's
      unclear, and the specific questions for PJF. He'll work with you directly.
-5. Be concise.
+5. Once approved: implement, validate (XML well-formedness, repo prettier on authored JS, project checks),
+   commit with named files.
+6. **Review**: a fresh subagent reviews `git diff <base-sha>..HEAD` against the card and the project rules
+   (CLAUDE.md, memory). Fix confirmed findings; commit.
+7. **Test gate**: give PJF a concise test flow here (position, steps, expected) + any table/list/group change
+   he must push himself, and `SendMessage` the orchestrator (`<orchestrator-session>`) "ready to test" + the
+   same flow. The orchestrator test-pushes your committed build once PJF says go. Fix → commit → tell it.
+8. **MR** on PJF's go after testing: follow the open-gitlab-mr skill (source `mr/<name>`, target `<target>`,
+   its description template). `SendMessage` the orchestrator the MR link.
+9. Be concise.
 
 <confirmed requirements from PJF, if any — state them as requirements, not suggestions>
 
-Rules: no platform pushes/pulls or tracker writes without asking PJF. Never `git add -A`. Other streams run
+Rules: never push to the platform yourself (weboard, webeoc-lists, webeoc-groups — the orchestrator does test
+pushes); no tracker writes without asking PJF; no merges into <base>. Never `git add -A`. Other streams run
 in parallel (<list names>): flag any file you'd touch that another stream is likely to touch.
 ```
 
@@ -124,12 +147,15 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to pus
   card, repo, memory or an earlier PJF answer settles it; otherwise ask PJF (one line per question, card
   named) and relay his answer verbatim-in-substance. Never invent requirements to keep a stream moving.
 - **Ready to test** = the stream sends you its test flow. Run `test-push.sh push <name>` (dry-run first),
-  record status `testing`, and send PJF the test flow. Relay his result: fixes → the stream commits and
+  record status `testing`, and send PJF the test flow. (Regular streams: same, but only once PJF says go —
+  he already has the flow in the stream's pane.) Relay his result: fixes → the stream commits and
   tells you → re-push; go → tell the stream to open its MR.
 - **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
-  Auto streams never merge into the local dev branch (if `weboard dev` watches it, a merge auto-pushes).
+  Streams never merge into the local dev branch (if `weboard dev` watches it, a merge auto-pushes).
+- **Sync the dev branch for regular streams too** (their MRs need the same clean base) — but there the
+  `git push origin <dev>` isn't pre-authorised: ask PJF first.
 
-Auto brief (replaces steps 1–4 of the §3 template):
+Auto brief (replaces steps 1–8 of the §3 template; the header and Rules stay):
 
 ```markdown
 You are an **autonomous** stream (bypass mode). Take the card end to end without PJF:
@@ -177,21 +203,24 @@ Pushing is pre-authorised in `--auto` mode; otherwise ask PJF. Either way the sc
 A full `weboard push` (whole board from dev) overwrites every claimed asset: re-run `test-push push <name>` for
 each stream in `test-push status` afterwards.
 
-## Testing on the platform (why streams commit so often)
+## Testing on the platform
 
-A worktree's edits never reach the platform on their own. The user tests by running `weboard dev` (the file
-watcher) over the board in the **main checkout**, so a change only goes live once it's committed in the
-worktree and fast-forward-merged into the dev branch there. So each stream commits after every change the
-user wants to try, and the orchestrator/stream merges it per the confidence rule below; the merge is the
-deploy only while `weboard dev` is running. If a merged change isn't live, check the watcher first.
+Both modes test through `test-push.sh` from the stream's worktree (above) — the pre-MR build — and again
+after merge-and-deploy on the dev build. The older path (commit in the worktree → fast-forward-merge into the
+main checkout's dev branch while PJF runs `weboard dev`, which auto-pushes) is only for when PJF asks for it;
+if a merged change isn't live there, check the watcher first.
 
 ## 6. Finish a stream
 
-1. Merge into the dev branch per PJF's confidence-gated rule (clean, well-defined → merge; debugging-heavy
-   or unverified → ask first).
-2. If the work needs a merge request, invoke the **open-gitlab-mr** skill. Once PJF approves the MR, run its
-   automated post-approval flow (`merge-and-deploy.sh <iid>`: merge → fast-forward → targeted platform push)
-   without re-asking; then close the stream (step 3).
+1. No-MR work only (PJF opted out of an MR): merge into the dev branch per his confidence-gated rule (clean,
+   well-defined → merge; debugging-heavy or unverified → ask first), then skip to step 3.
+2. **Post-merge flow** — once PJF approves the MR, run it without re-asking at each step:
+   1. `merge-and-deploy.sh <iid> --dry-run`, then for real, from the main checkout on dev. It merges on
+      GitLab, pulls the remote back into local dev (fast-forward), and `weboard push`es each changed view /
+      resource (it also clears the stream's test-push claims).
+   2. Relay what it printed: assets pushed, any "needs PJF" items (tables, lists, groups — ask), and the MR's
+      **How to test** steps verbatim, so he re-tests the merged build live.
+   3. On his OK → close the stream (step 3). A failed re-test → a fix stream (or the same stream, new MR).
 3. Prune only when: the work is merged (for MR streams, check the MR, since `mr/<name>` is cherry-picked),
    `test-push status` shows no claims for it, the worktree is clean (scratch files aside), and its
    `<name>-scratch.md` has no parked or open items (read it; carry live ones into the project's open list).

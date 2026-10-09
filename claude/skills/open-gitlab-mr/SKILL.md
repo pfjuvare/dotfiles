@@ -39,9 +39,9 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
    - **Target branch** — default to wherever this source branch's previous MRs went (agvic: stream MRs →
      `dev`, NOT `main`). Look it up: `gitlab-mr.sh recent <source>`. Else the project default branch.
    - **Title** — from the card title / commit subjects; imperative, ≤ 72 chars.
-   - **Description** — draft from `git log --no-merges origin/<target>..<source>` (after step 2 this is only the stream's commits) and any Trello card: summary,
-     changes (one line per area), how to test, card link. Write it to
-     `<scratchpad>/mr-description.md` and tell PJF the path so he can edit it in nvim if he prefers.
+   - **Description** — draft from `git log --no-merges origin/<target>..<source>` (after step 2 this is only the stream's commits) and any Trello card,
+     using the template below. Write it to `<scratchpad>/mr-description.md` and tell PJF the path so he can
+     edit it in nvim if he prefers.
    - **Options** — draft? delete source branch on merge? (default: no / no).
    Also run `gitlab-mr.sh existing <source> <target>`; if an open MR already exists, show it and ask
    whether to stop instead.
@@ -57,6 +57,39 @@ Helper: `~/.claude/skills/open-gitlab-mr/gitlab-mr.sh` (curl + jq; host/project 
    gitlab-mr.sh create --source <s> --target <t> --title "<title>" --description-file <f> [--draft] [--remove-source]
    ```
    Report the `!iid` and URL — one line — then offer the Teams post (see "Teams review request").
+
+## MR description template
+
+````markdown
+## Summary
+1–2 client-readable lines.
+
+## Changes
+- **<area / file>**: one line per change.
+
+## Views changed
+- `<asset>` (display | input | resource; mark NEW ones)
+
+## Push
+```bash
+cd boards/<board>
+weboard push "<resource>.js"     # resources first, then Util - Schema - *, then views
+weboard push "<view>"
+```
+Tables / lists / groups: name them here as separate manual steps (not weboard).
+
+## How to test
+1. Position + incident, then numbered steps, each with the expected result. Keep it short.
+
+## Out of scope        ← optional: what wasn't done, stated as fact
+Card: <trello link>
+````
+
+Keep the `## How to test` heading exactly: `merge-and-deploy.sh` replays that section after it deploys.
+
+**MRs are colleague-facing.** Call him **Patrick** (never "PJF"). Leave out conversation context: no "pending
+Patrick's decision", "as discussed", "per our chat", or questions addressed to him. Saying something is out of
+scope or wasn't implemented is fine — state it as a fact about the change. Same rule for `notify --note`.
 
 ## WAF gotcha (gitlab.juvare.com)
 
@@ -83,17 +116,18 @@ PJF), `weboard dev` running, or any push not reporting success (push errors are 
 
 New assets push fine by name (order: resources → `Util - Schema - *` views → other views). It also clears any
 `delegate/test-push.sh` claims on the assets it pushed, warning if another stream's test build is overwritten. Still needs PJF's explicit go (the script lists
-them as "needs PJF" and doesn't push them): `board-tables/` schema changes, `lists/` (webeoc-lists — destructive), and webeoc-groups changes (e.g. permission
-renames → re-grant; `push --overwrite` is non-atomic). Report: merged sha, assets pushed, needs-PJF items, and
-the MR's live test steps.
+them as "needs PJF" and doesn't push them): `board-tables/` schema changes, `lists/` (webeoc-lists — destructive), and webeoc-groups changes
+(`groups/*.json`, permission renames → re-grant; `push --overwrite` is non-atomic). Last, it prints the MR's
+`## How to test` section. Report: merged sha, assets pushed, needs-PJF items, and those test steps (relay them
+verbatim so PJF can re-test live).
 
-Lower-level: `gitlab-mr.sh status <iid>` / `gitlab-mr.sh merge <iid>`.
+Lower-level: `gitlab-mr.sh status <iid>` / `gitlab-mr.sh merge <iid>` / `gitlab-mr.sh description <iid> [--section <heading>]`.
 
 ## Pre-authorised mode (auto delegate streams)
 
 When the stream's `STREAM-BRIEF.md` says it's an autonomous `/delegate --auto` stream, PJF has already
 authorised the push + MR. Run steps 1, 2, 4, 5 without asking: push only `mr/<name>` (never the dev or
-target branch), title from the card, description to your session scratchpad `mr-description.md`
+target branch), title from the card, description (template above, no chat context) to your session scratchpad `mr-description.md`
 (never in the worktree), no draft, don't remove source. If `existing` finds an open MR for the pair,
 push the updated branch and don't create a new one. If the brief has a `Teams: <channel>` line, run
 `gitlab-mr.sh notify <iid> --channel <channel>` once the MR is new (not on an updated one). Any failure (no token, conflict, push rejected) → stop
