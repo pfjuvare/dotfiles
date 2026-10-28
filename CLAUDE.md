@@ -74,7 +74,7 @@ are live and either can be used.
 - Screens are **offline previews** rendered from board source. Board JS isn't run, fixtures fake its effects, and WebEOC hosts are never contacted. They are not live screenshots.
 - Stream guide files (`/*-guide.*`) are git-excluded by `spawn-stream.sh`.
 - Live-screenshot mode is parked because Imperva blocks tooling on agvic. See vault note `webeoc-guide - playwright annotated test guides (parked)`.
-- WSL needs `sudo apt-get install -y libnss3 libnspr4 libasound2t64` for Playwright's Chromium.
+- `install.sh` installs its npm dependencies and Playwright Chromium (plus `libnss3 libnspr4 libasound2t64` on apt) when `~/code/webeoc-guide` exists without `node_modules`.
 
 ## Neovim Config Structure
 

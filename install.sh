@@ -275,7 +275,20 @@ else
 fi
 mkdir -p "$CLAUDE_PROJECT_DIR"
 ln -sfn "$DOTFILES/claude/memory" "$CLAUDE_PROJECT_DIR/memory"
-ln -sfn "$DOTFILES/claude/skills" "$HOME/.claude/skills"
+# Skills are linked one by one: ~/.claude/skills also holds local-only skills
+# (created in Claude Code, or synced from claude.ai) that aren't in this repo.
+# An older install linked the whole directory; that link is replaced.
+[ -L "$HOME/.claude/skills" ] && rm "$HOME/.claude/skills"
+mkdir -p "$HOME/.claude/skills"
+for skill in "$DOTFILES"/claude/skills/*/; do
+  skill="${skill%/}"
+  dest="$HOME/.claude/skills/$(basename "$skill")"
+  if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+    echo "Skipping skill $(basename "$skill"): $dest exists and is not a symlink"
+    continue
+  fi
+  ln -sfn "$skill" "$dest"
+done
 ln -sfn "$DOTFILES/claude/hooks" "$HOME/.claude/hooks"
 
 # opencode config (coexists with Claude Code).
@@ -285,6 +298,17 @@ ln -sfn "$DOTFILES/claude/hooks" "$HOME/.claude/hooks"
 mkdir -p "$HOME/.config/opencode"
 ln -sf "$DOTFILES/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
 ln -sf "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
+
+# webeoc-guide: the renderer behind the test-guide skill. A separate repo with
+# no remote yet, so it's only set up if it's already been copied to ~/code.
+WEBEOC_GUIDE="$HOME/code/webeoc-guide"
+if [ -f "$WEBEOC_GUIDE/package.json" ] && [ ! -d "$WEBEOC_GUIDE/node_modules" ]; then
+  echo "Installing webeoc-guide dependencies + Playwright Chromium..."
+  (cd "$WEBEOC_GUIDE" && npm ci && npx playwright install chromium-headless-shell)
+  if [ "$PKG_MANAGER" = apt ]; then
+    sudo apt-get install -y libnss3 libnspr4 libasound2t64
+  fi
+fi
 
 # herdr config (keybindings ported from tmux -- see herdr/config.toml).
 # Symlink the FILE, not the directory: herdr also keeps its sockets, logs, and
