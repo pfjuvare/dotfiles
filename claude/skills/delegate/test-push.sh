@@ -18,7 +18,9 @@
 #   - dev changed an asset since the stream branched (pushing would revert dev's work live —
 #     `git merge dev` in the worktree first);
 #   - `weboard dev` is running.
-# Disjoint streams can be under test at the same time. board-tables/ and lists/ are listed, not pushed.
+# Disjoint streams can be under test at the same time. lists/ and groups/ are listed, not pushed.
+# board-tables/ are pushed FIRST: a view push creates a missing table but with default settings (incident-
+# DEPENDENT), ignoring the table's config.json (e.g. incidentIndependent); only the table push applies it.
 # Schema views (`Util - Schema - *`) are pushed before other views so new columns exist first.
 set -euo pipefail
 
@@ -42,7 +44,7 @@ kname() { printf '%s' "${1#*/}"; }
 
 weboard_running() { ps -eo args | grep -qiE '^[^ ]*(node[^ ]* )?[^ ]*weboard[^ ]* dev( |$)'; }
 
-# assets <repo-dir> <base> <head> → "kind<TAB><dir>/<name>" lines (kind: res|schema|view|manual)
+# assets <repo-dir> <base> <head> → "kind<TAB><dir>/<name>" lines (kind: table|res|schema|view|manual)
 assets() {
   git -C "$1" diff --name-only "$2" "$3" -- boards groups | while IFS= read -r f; do
     case "$f" in groups/*.json) printf 'manual\t%s\n' "$f"; continue ;; esac   # webeoc-groups, non-atomic
@@ -52,7 +54,8 @@ assets() {
       board-resources) printf 'res\t%s/%s\n' "$dir" "$name" ;;
       board-displays|board-inputs)
         case "$name" in "Util - Schema - "*) printf 'schema\t%s/%s\n' "$dir" "$name" ;; *) printf 'view\t%s/%s\n' "$dir" "$name" ;; esac ;;
-      board-tables|lists) printf 'manual\t%s/%s\n' "$dir" "$rel" ;;
+      board-tables) printf 'table\t%s/%s\n' "$dir" "$name" ;;                         # settings only land via a table push
+      lists) printf 'manual\t%s/%s\n' "$dir" "$rel" ;;
     esac
   done | sort -u
 }
@@ -70,7 +73,7 @@ do_push() {
   done
 }
 
-ordered() { awk -F'\t' '$1=="res"{print 0"\t"$2} $1=="schema"{print 1"\t"$2} $1=="view"{print 2"\t"$2}' | sort | cut -f2; }
+ordered() { awk -F'\t' '$1=="table"{print 0"\t"$2} $1=="res"{print 1"\t"$2} $1=="schema"{print 2"\t"$2} $1=="view"{print 3"\t"$2}' | sort | cut -f2; }
 
 cmd=${1:-}; shift || true
 case "$cmd" in
@@ -90,7 +93,7 @@ case "$cmd" in
       # literal dir pathspecs: a glob like board-*/<asset> must match the whole file path, so it never matched
       b="boards/$(kdir "$a")" n=$(kname "$a")
       git -C "$main" diff --quiet "$mb" "$dev" -- ":(literal)$b/board-displays/$n" \
-          ":(literal)$b/board-inputs/$n" ":(literal)$b/board-resources/$n" \
+          ":(literal)$b/board-inputs/$n" ":(literal)$b/board-resources/$n" ":(literal)$b/board-tables/$n" \
         || bad+=("$a — changed on $dev since $stream branched (git merge $dev in the worktree)")
     done
     echo "$stream @ $(git -C "$wt" log --oneline -1 HEAD)"

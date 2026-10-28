@@ -79,7 +79,7 @@ You are in **plan mode**. Do NOT edit files or implement anything yet.
    commit with named files.
 6. **Review**: a fresh subagent reviews `git diff <base-sha>..HEAD` against the card and the project rules
    (CLAUDE.md, memory). Fix confirmed findings; commit.
-7. **Test gate**: give PJF a concise test flow here (position, steps, expected) + any table/list/group change
+7. **Test gate**: give PJF a concise test flow here (position, steps, expected) + any list/group change
    he must push himself, and `SendMessage` the orchestrator (`<orchestrator-session>`) "ready to test" + the
    same flow. The orchestrator test-pushes your committed build once PJF says go. Fix → commit → tell it.
 8. **MR** on PJF's go after testing: follow the open-gitlab-mr skill (source `mr/<name>`, target `<target>`,
@@ -176,7 +176,7 @@ You are an **autonomous** stream (bypass mode). Take the card end to end without
 4. **Review**: launch a fresh subagent to review `git diff <base-sha>..HEAD` against the card and the
    project rules (CLAUDE.md, memory). Fix confirmed findings; commit.
 5. **Test gate**: `SendMessage` the orchestrator "ready to test" + a concise test flow (position, steps,
-   expected) + any table/list change PJF must push himself. WAIT. The orchestrator test-pushes your
+   expected) + any list/group change PJF must push himself. WAIT. The orchestrator test-pushes your
    committed build and PJF tests it. Fixes come back through the orchestrator: fix, commit, tell it
    (it re-pushes). Only on PJF's go → step 6. Never push to the platform yourself.
 6. **MR**: follow the open-gitlab-mr skill in *pre-authorised* mode — source `mr/<name>`, target `<target>`.
@@ -195,7 +195,7 @@ Streams are tested on the platform from their own worktree before any MR, so a m
 before review. `~/.claude/skills/delegate/test-push.sh` (on PJF's PATH as `test-push` via a `~/.local/bin` symlink; run from the main checkout; `--help`):
 
 - `push <name> [--dry-run]` — targeted `weboard push` of every asset the stream changed vs its merge-base
-  with dev (resources → `Util - Schema - *` → views), from the worktree. Records a **claim** per asset in
+  with dev (tables → resources → `Util - Schema - *` → views), from the worktree. Records a **claim** per asset in
   `.git/test-slots.tsv`.
 - `status` — what's on the platform right now, per stream. Check it before telling PJF what he's testing.
 - `release <name> [--restore]` — drop the claims; `--restore` re-pushes dev's version (rejected/abandoned).
@@ -205,7 +205,7 @@ before review. `~/.claude/skills/delegate/test-push.sh` (on PJF's PATH as `test-
 **One live version per asset, not one worktree at a time.** Streams touching disjoint assets can be under
 test together. `push` refuses an asset another stream claims (test → merge/release that one first), and
 refuses when dev changed an asset since the stream branched (pushing would revert dev's work live — have
-the stream `git merge dev` first). Tables and lists are listed, never pushed: PJF does those, before views.
+the stream `git merge dev` first). Lists and groups are listed, never pushed: PJF does those. Tables are pushed first: a view push does create a missing table and its columns, but with default settings (incident-dependent), ignoring `incidentIndependent` in the table's config.json; only a table push applies those.
 Pushing is pre-authorised in `--auto` mode; otherwise ask PJF. Either way the script checks `weboard dev`.
 All of this is dev only (the scripts unset inherited `WE_*` vars so `.env` wins). Assets are keyed
 `<board dir>/<asset>`, so repos with several `boards/*/` work. Demo is `npm run <abbr>-push:demo -- "<asset>"`
@@ -228,7 +228,7 @@ if a merged change isn't live there, check the watcher first.
    1. `merge-and-deploy.sh <iid> --dry-run`, then for real, from the main checkout on dev. It merges on
       GitLab, pulls the remote back into local dev (fast-forward), and `weboard push`es each changed view /
       resource (it also clears the stream's test-push claims).
-   2. Relay what it printed: assets pushed, any "needs PJF" items (tables, lists, groups — ask), and the MR's
+   2. Relay what it printed: assets pushed, any "needs PJF" items (lists, groups — ask), and the MR's
       **How to test** steps verbatim, so he re-tests the merged build live.
    3. On his OK → close the stream (step 3). A failed re-test → a fix stream (or the same stream, new MR).
 3. Prune only when: the work is merged (for MR streams, check the MR, since `mr/<name>` is cherry-picked),
