@@ -66,6 +66,15 @@ are live and either can be used.
 - **Skipped under WSL**: WSL2 has no access to the host's raw keyboard input, so kanata there can't intercept physical keys. Home row mods on a WSL machine require running kanata natively on the Windows host instead (not covered by this repo).
 - **macOS requires manual steps**: installing the Karabiner-DriverKit-VirtualHIDDevice driver and approving it in System Settings can't be scripted — `install.sh` prints the steps instead of running them.
 
+## webeoc-guide (annotated test guides)
+
+`~/code/webeoc-guide` is a separate repo (no remote yet, so it isn't a submodule here) that renders annotated, screen-by-screen HTML test guides for WebEOC views: spotlight highlights, arrows and numbered callouts, in `dev` and `uat` variants. It's meant to go alongside the text test flows `/delegate` streams write.
+
+- Run: `node ~/code/webeoc-guide/bin/webeoc-guide.js render <flow>.yaml --audience dev|uat|both --out <dir>`. The flow format and limits are in its `README.md`, with an example in `examples/agvic-branch-input.yaml`.
+- Screens are **offline previews** rendered from board source. Board JS isn't run, fixtures fake its effects, and WebEOC hosts are never contacted. They are not live screenshots.
+- Live-screenshot mode is parked because Imperva blocks tooling on agvic. See vault note `webeoc-guide - playwright annotated test guides (parked)`.
+- WSL needs `sudo apt-get install -y libnss3 libnspr4 libasound2t64` for Playwright's Chromium.
+
 ## Neovim Config Structure
 
 The nvim config is based on [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim) — a single-file starting point, not a distribution.
