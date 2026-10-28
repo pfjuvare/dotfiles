@@ -17,7 +17,7 @@ setopt INC_APPEND_HISTORY
 
 # Prompt: user@host:dir (branch*+)$ (matching bash theme colors)
 # Git segment via zsh's built-in vcs_info: * = unstaged changes, + = staged,
-# and the in-progress action (rebase/merge/cherry-pick) when there is one.
+# ? = untracked files, and the in-progress action (rebase/merge/cherry-pick).
 autoload -U colors && colors
 autoload -Uz vcs_info add-zsh-hook
 zstyle ':vcs_info:*' enable git
@@ -26,6 +26,13 @@ zstyle ':vcs_info:git:*' unstagedstr '%F{red}*'
 zstyle ':vcs_info:git:*' stagedstr '%F{green}+'
 zstyle ':vcs_info:git:*' formats ' %F{magenta}(%b%u%c%F{magenta})%f'
 zstyle ':vcs_info:git:*' actionformats ' %F{magenta}(%b|%F{red}%a%u%c%F{magenta})%f'
+# vcs_info has no untracked check; the :/ pathspec scans the whole repo, not just cwd.
+zstyle ':vcs_info:git*+set-message:*' hooks git-untracked
++vi-git-untracked() {
+  if [[ -n $(git ls-files --others --exclude-standard --directory --no-empty-directory :/ 2>/dev/null | head -1) ]]; then
+    hook_com[unstaged]+='%F{yellow}?'
+  fi
+}
 add-zsh-hook precmd vcs_info
 setopt PROMPT_SUBST
 PROMPT='%B%F{green}%n@%m%f%b:%B%F{blue}%~%f%b${vcs_info_msg_0_}$ '
