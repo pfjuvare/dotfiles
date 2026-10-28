@@ -15,9 +15,20 @@ setopt APPEND_HISTORY
 # SIGKILL) — with plain APPEND_HISTORY that session's commands can be lost.
 setopt INC_APPEND_HISTORY
 
-# Prompt: user@host:dir$ (matching bash theme colors)
+# Prompt: user@host:dir (branch*+)$ (matching bash theme colors)
+# Git segment via zsh's built-in vcs_info: * = unstaged changes, + = staged,
+# and the in-progress action (rebase/merge/cherry-pick) when there is one.
 autoload -U colors && colors
-PROMPT='%B%F{green}%n@%m%f%b:%B%F{blue}%~%f%b$ '
+autoload -Uz vcs_info add-zsh-hook
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:git:*' check-for-changes true
+zstyle ':vcs_info:git:*' unstagedstr '%F{red}*'
+zstyle ':vcs_info:git:*' stagedstr '%F{green}+'
+zstyle ':vcs_info:git:*' formats ' %F{magenta}(%b%u%c%F{magenta})%f'
+zstyle ':vcs_info:git:*' actionformats ' %F{magenta}(%b|%F{red}%a%u%c%F{magenta})%f'
+add-zsh-hook precmd vcs_info
+setopt PROMPT_SUBST
+PROMPT='%B%F{green}%n@%m%f%b:%B%F{blue}%~%f%b${vcs_info_msg_0_}$ '
 
 # Set terminal title to user@host: dir
 case "$TERM" in
