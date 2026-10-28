@@ -68,7 +68,7 @@ You are in **plan mode**. Do NOT edit files or implement anything yet.
 2. *(Optional — include for defects / behaviour changes; omit for pure build tasks or if PJF opts out)*
    **Repro flow first.** Before investigating a fix, give PJF a concise testing flow for the problem AS IT
    STANDS: account/position + incident to use, numbered steps, expected vs actual (from the card, in your
-   words). Add one line of how you read the problem. Then STOP and wait for him to confirm or correct it —
+   words), plus its visual guide (test-guide skill) when the problem is on screen. Add one line of how you read the problem. Then STOP and wait for him to confirm or correct it —
    this is to get his bearings and agree on the problem before any planning.
 3. Investigate the relevant code in this worktree (read-only).
 4. Decide:
@@ -79,9 +79,9 @@ You are in **plan mode**. Do NOT edit files or implement anything yet.
    commit with named files.
 6. **Review**: a fresh subagent reviews `git diff <base-sha>..HEAD` against the card and the project rules
    (CLAUDE.md, memory). Fix confirmed findings; commit.
-7. **Test gate**: give PJF a concise test flow here (position, steps, expected) + any list/group change
-   he must push himself, and `SendMessage` the orchestrator (`<orchestrator-session>`) "ready to test" + the
-   same flow. The orchestrator test-pushes your committed build once PJF says go. Fix → commit → tell it.
+7. **Test gate**: give PJF a concise test flow here (position, steps, expected) + its guide link (test-guide
+   skill) + any list/group change he must push himself, and `SendMessage` the orchestrator
+   (`<orchestrator-session>`) "ready to test" + the same flow and link. The orchestrator test-pushes your committed build once PJF says go. Fix → commit → tell it.
 8. **MR** on PJF's go after testing: follow the open-gitlab-mr skill (source `mr/<name>`, target `<target>`,
    its description template). Once it's created, **offer PJF the Teams post** (open-gitlab-mr "Teams review
    request"), even when the go came relayed through the orchestrator. `SendMessage` the orchestrator the MR
@@ -153,7 +153,7 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to pus
   card, repo, memory or an earlier PJF answer settles it; otherwise ask PJF (one line per question, card
   named) and relay his answer verbatim-in-substance. Never invent requirements to keep a stream moving.
 - **Ready to test** = the stream sends you its test flow. Run `test-push.sh push <name>` (dry-run first),
-  record status `testing`, and send PJF the test flow. (Regular streams: same, but only once PJF says go —
+  record status `testing`, and send PJF the test flow and its guide link. (Regular streams: same, but only once PJF says go —
   he already has the flow in the stream's pane.) Relay his result: fixes → the stream commits and
   tells you → re-push; go → tell the stream to open its MR.
 - **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
@@ -176,7 +176,7 @@ You are an **autonomous** stream (bypass mode). Take the card end to end without
 4. **Review**: launch a fresh subagent to review `git diff <base-sha>..HEAD` against the card and the
    project rules (CLAUDE.md, memory). Fix confirmed findings; commit.
 5. **Test gate**: `SendMessage` the orchestrator "ready to test" + a concise test flow (position, steps,
-   expected) + any list/group change PJF must push himself. WAIT. The orchestrator test-pushes your
+   expected) + its guide link (test-guide skill) + any list/group change PJF must push himself. WAIT. The orchestrator test-pushes your
    committed build and PJF tests it. Fixes come back through the orchestrator: fix, commit, tell it
    (it re-pushes). Only on PJF's go → step 6. Never push to the platform yourself.
 6. **MR**: follow the open-gitlab-mr skill in *pre-authorised* mode — source `mr/<name>`, target `<target>`.
@@ -229,7 +229,7 @@ if a merged change isn't live there, check the watcher first.
       GitLab, pulls the remote back into local dev (fast-forward), and `weboard push`es each changed view /
       resource (it also clears the stream's test-push claims).
    2. Relay what it printed: assets pushed, any "needs PJF" items (lists, groups — ask), and the MR's
-      **How to test** steps verbatim, so he re-tests the merged build live.
+      **How to test** steps verbatim, plus the stream's guide link, so he re-tests the merged build live.
    3. On his OK → close the stream (step 3). A failed re-test → a fix stream (or the same stream, new MR).
 3. Prune only when: the work is merged (for MR streams, check the MR, since `mr/<name>` is cherry-picked),
    `test-push status` shows no claims for it, the worktree is clean (scratch files aside), and its

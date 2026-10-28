@@ -68,10 +68,11 @@ are live and either can be used.
 
 ## webeoc-guide (annotated test guides)
 
-`~/code/webeoc-guide` is a separate repo (no remote yet, so it isn't a submodule here) that renders annotated, screen-by-screen HTML test guides for WebEOC views: spotlight highlights, arrows and numbered callouts, in `dev` and `uat` variants. It's meant to go alongside the text test flows `/delegate` streams write.
+`~/code/webeoc-guide` is a separate repo (no remote yet, so it isn't a submodule here) that renders annotated, screen-by-screen HTML test guides for WebEOC views: spotlight highlights, arrows and numbered callouts. The **`test-guide` skill** (`claude/skills/test-guide/`) drives it, and `/delegate` streams use it at the test gate, linking the guide next to the text test flow.
 
-- Run: `node ~/code/webeoc-guide/bin/webeoc-guide.js render <flow>.yaml --audience dev|uat|both --out <dir>`. The flow format and limits are in its `README.md`, with an example in `examples/agvic-branch-input.yaml`.
+- Run: `node ~/code/webeoc-guide/bin/webeoc-guide.js render <flow>.yaml [--uat] [--open]`. It writes `<flow>.html` (terse dev guide), or with `--uat` `<flow>.uat.html` (plain-English pass/fail version), and prints a `file://wsl.localhost/…` link that opens with ctrl+click in Windows Terminal. Flow format: its `README.md` and `examples/agvic-branch-input.yaml`.
 - Screens are **offline previews** rendered from board source. Board JS isn't run, fixtures fake its effects, and WebEOC hosts are never contacted. They are not live screenshots.
+- Stream guide files (`/*-guide.*`) are git-excluded by `spawn-stream.sh`.
 - Live-screenshot mode is parked because Imperva blocks tooling on agvic. See vault note `webeoc-guide - playwright annotated test guides (parked)`.
 - WSL needs `sudo apt-get install -y libnss3 libnspr4 libasound2t64` for Playwright's Chromium.
 

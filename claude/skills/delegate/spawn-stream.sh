@@ -85,10 +85,10 @@ case "$mode" in
   *) die "--mode must be plan|bypass|default" ;;
 esac
 
-# Keep the brief + scratch file out of git status in every worktree.
+# Keep the brief, scratch file and test guides out of git status in every worktree.
 exclude="$common/info/exclude"
 mkdir -p "$(dirname "$exclude")"; touch "$exclude"
-for pat in 'STREAM-BRIEF.md' '/*-scratch.md'; do
+for pat in 'STREAM-BRIEF.md' '/*-scratch.md' '/*-guide.*'; do
   grep -qxF "$pat" "$exclude" || echo "$pat" >> "$exclude"
 done
 
