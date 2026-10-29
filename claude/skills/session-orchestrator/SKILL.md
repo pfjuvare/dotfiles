@@ -27,6 +27,9 @@ Already inside tmux (`$TMUX_PANE` set)? Then this pane is the session orchestrat
 tmux rename-window -t "$TMUX_PANE" session-orch
 ```
 
+This path keeps the session's current permission mode. If it isn't bypass, tell the user: incoming
+SendMessages will wait for approval, so restart this pane with `claude --dangerously-skip-permissions`.
+
 Not in tmux, or PJF wants a fresh session? Start one:
 
 ```bash
