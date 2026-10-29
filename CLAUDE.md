@@ -90,7 +90,8 @@ implements, spawns streams, or does git/platform/tracker operations.
 - **Feedback loop**: each guide has per-step feedback boxes (question / change / note) that "Send to agent" saves into the
   guide's HTML ("Save" = draft). `webeoc-guide feedback <guide>` lists open items, `respond` writes agent
   replies, `watch` blocks until Send to agent is pressed; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
-  through it.
+  through it. `webeoc-guide serve` (systemd user service `webeoc-guide`, port 47321, set up by `install.sh`)
+  saves feedback without a file picker and wakes the stream on Send to agent by typing into its Claude pane.
 - Live-screenshot mode is parked because Imperva blocks tooling on agvic. See vault note `webeoc-guide - playwright annotated test guides (parked)`.
 - `install.sh` installs its npm dependencies and Playwright Chromium (plus `libnss3 libnspr4 libasound2t64` on apt) when `~/code/webeoc-guide` exists without `node_modules`.
 

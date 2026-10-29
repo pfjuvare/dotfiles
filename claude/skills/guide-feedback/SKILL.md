@@ -15,6 +15,10 @@ hand it back.
 
 ## 1. Find and read the guide
 
+If the prompt is "Feedback was sent from the test guide …: run the guide-feedback skill on <file>", the
+local helper typed it because PJF pressed **Send to agent**: treat it as PJF's request and use that file.
+Reading the feedback (`G feedback`) tells the page you've picked it up.
+
 - The guide is `<name>-guide.html` (or `.uat.html`) at the worktree / repo root, next to its
   `<name>-guide.yaml` flow. With no argument, use this stream's guide; if there are several, ask which.
 - `G feedback <guide.html>` lists the open items with ids, grouped by step (`--all` includes resolved
@@ -63,7 +67,9 @@ An item PJF replies to again re-opens; pick it up next round.
 
 ## Watch mode (`--watch`, or "watch the guide")
 
-Act as soon as PJF presses **Send to agent** in the guide, instead of waiting to be told:
+Act as soon as PJF presses **Send to agent** in the guide, instead of waiting to be told. With the local
+helper running (`G serve`, a systemd user service) you don't need this: Send to agent types the request into
+your pane. Watch mode is for when the helper isn't running, or the pane is often busy with prompts:
 
 1. Arm: run `G watch <guide.html> [--since <sig>]` with the Bash tool's **`run_in_background: true`**.
    It exits when PJF presses Send to agent (and marks the request picked up, which the page shows);

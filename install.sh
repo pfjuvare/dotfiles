@@ -309,6 +309,10 @@ if [ -f "$WEBEOC_GUIDE/package.json" ] && [ ! -d "$WEBEOC_GUIDE/node_modules" ];
     sudo apt-get install -y libnss3 libnspr4 libasound2t64 xsltproc
   fi
 fi
+# Its local helper (test guide "Send to agent") as a systemd user service.
+if [ -f "$WEBEOC_GUIDE/package.json" ] && systemctl --user is-system-running >/dev/null 2>&1; then
+  node "$WEBEOC_GUIDE/bin/webeoc-guide.js" install-service
+fi
 
 # herdr config (keybindings ported from tmux -- see herdr/config.toml).
 # Symlink the FILE, not the directory: herdr also keeps its sockets, logs, and
