@@ -28,6 +28,10 @@ Reading the feedback (`G feedback`) tells the page you've picked it up.
   sidebar, or paste **Copy feedback** into the chat. If they saved to a downloaded copy instead, ask for
   its path and read that file.
 
+**Combined guide** (one guide, a section per ticket, in the main checkout) and you're the orchestrator:
+don't act on the items yourself. Send each to the stream that owns its section (`[section: …]` shows which),
+then write its answer back with `respond`. Items in General are yours to answer or route.
+
 ## 2. Act on each item
 
 Work out what each one asks for, whatever kind PJF picked:

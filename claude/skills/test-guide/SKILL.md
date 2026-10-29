@@ -89,6 +89,12 @@ blended flow that mixes their steps.
   test platform. (`boardDir` is flow-level only, which is why the merged board copy is needed.)
 - The "Scope" rules apply per section: each covers only its own ticket's changes or defects.
 - With a combined test-push, set the merged flow's `testPush:` to the combined stream.
+- **Render the combined guide into the repo's main checkout root** (`<repo>/<round>-guide.html`; `/*-guide.*`
+  is git-excluded), never into `/tmp` or a Claude scratchpad: the helper only serves guides under `~`, and
+  there Send to agent wakes the orchestrator and the toggle works.
+- **Feedback on a combined guide comes to the orchestrator** (its pane is in that folder). Each item records
+  its section (`[section: …]` in `webeoc-guide feedback`). Route each item to the stream that owns its section,
+  then write that stream's answer back with `webeoc-guide respond` yourself, so PJF sees it in the guide.
 
 ## Feedback in the guide
 
