@@ -28,6 +28,8 @@ orchestrator and the MR), then generate the guide from it and link it. Tool: `~/
      tags default to every tag the view checks.
    - `api:` holds REST mocks for what the board JS fetches: read its `fetchRecords` / `getRecords` calls
      and give `display/<view>` arrays in that view's field names. `embeds:` gives data to embedded views.
+   - The agency logo is platform data. Keep one `agency-logo.png` at the client repo root (PJF saves it
+     from the live header) and every flow picks it up; otherwise the logo circle is blank.
    - Use **sample data, never real records**. Fixtures (DOM edits) are a last resort; board JS may overwrite them.
    - If the render doesn't look right, check the dev guide's Network and console notes for the call that
      needs a mock before reaching for a fixture.
