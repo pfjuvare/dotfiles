@@ -43,3 +43,7 @@ needed), `prefix+A` or `/stream-layout` runs `~/dotfiles/bin/tmux-stream-layout`
 
 Follow `/orchestrate` (repo protocol, state file) or `/delegate` (spawning streams, auto mode, test-push,
 close-out). Target panes by the ids the script prints, never by index.
+
+To command orchestrators in several tmux sessions from one place, start the optional top tier with
+`/session-orchestrator`. It finds this window by name (`*orchestrator*`), so keep the default name or one
+containing `orchestrator`.

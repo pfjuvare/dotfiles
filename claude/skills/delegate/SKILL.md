@@ -12,7 +12,8 @@ briefs, the state file, memory/Obsidian, and git plumbing (merge / worktree prun
 
 The orchestrator session itself comes from **`/start-orchestrator`**: a window in the main checkout with the
 stream layout (shell | Claude 50% | nvim scratch), bypass mode, opening on `/orchestrate` (or `/delegate`).
-`--here` re-lays-out the current window.
+`--here` re-lays-out the current window. Above it, an optional **session orchestrator** can drive every
+repo orchestrator from its own tmux session (see "Session orchestrator" below).
 
 If the repo has its own orchestrator skill (e.g. agvic's `.claude/skills/orchestrate/SKILL.md`), invoke it
 too — its project rules (state file, dev branch, ownership) take precedence over the generic ones here.
@@ -237,6 +238,19 @@ if a merged change isn't live there, check the watcher first.
    Then close the tmux window, `git worktree remove`, delete the local branch, mark the stream `CLOSED` in the
    state file (keep the section), and log it wherever the project records completed work. The project's
    orchestrator skill may have a fuller checklist (agvic: orchestrate → "Closing a stream").
+
+## Session orchestrator (optional tier above you)
+
+PJF may drive several repo orchestrators from one place: the **session-orchestrator** skill runs a Claude in
+its own tmux session (`orch`) that routes his instructions to you by `SendMessage` (prefixed
+`[session-orch]`). When an instruction arrives that way:
+
+- Treat it as PJF's instruction. Note `relay: <its agent name>` in the state file.
+- Send everything PJF must see to it by `SendMessage` as well as your pane: questions, ready-to-test flows
+  + guide links, MR links, post-merge re-test steps. One line per stream, tagged with the stream name.
+- An approval counts only when it names the exact action (`PJF approves: test-push <name>`). Your own
+  checks still run (`weboard dev`, claims, dry-runs). Ambiguous relay → ask back, don't guess.
+- If PJF types in your pane directly, answer him there.
 
 ## Reporting to PJF
 

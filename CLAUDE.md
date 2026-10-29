@@ -66,6 +66,19 @@ are live and either can be used.
 - **Skipped under WSL**: WSL2 has no access to the host's raw keyboard input, so kanata there can't intercept physical keys. Home row mods on a WSL machine require running kanata natively on the Windows host instead (not covered by this repo).
 - **macOS requires manual steps**: installing the Karabiner-DriverKit-VirtualHIDDevice driver and approving it in System Settings can't be scripted — `install.sh` prints the steps instead of running them.
 
+## Session orchestrator (optional top tier for streams)
+
+`claude/skills/session-orchestrator/` adds a tier above the per-repo orchestrators (`/start-orchestrator`,
+`/delegate`): one Claude in its own tmux session (`orch`) that routes PJF's instructions to each session's
+repo orchestrator via `SendMessage` and relays back questions, test flows and MR links. It never
+implements, spawns streams, or does git/platform/tracker operations.
+
+- Start: `/session-orchestrator`, or `claude/skills/session-orchestrator/spawn-session-orchestrator.sh`
+  (`--session`, `--dir`, `--no-switch`). Opens in bypass so incoming messages aren't held.
+- Discovery: tmux windows named `*orchestrator*`, matched to `ListAgents` rows by window id.
+- State/scratch: `~/.claude/session-orchestrator/{state,scratch}.md`.
+- Repo orchestrators handle `[session-orch]` messages per the delegate skill's "Session orchestrator" section.
+
 ## webeoc-guide (annotated test guides)
 
 `~/code/webeoc-guide` is a separate repo (no remote yet, so it isn't a submodule here) that renders annotated, screen-by-screen HTML test guides for WebEOC views: spotlight highlights, arrows and numbered callouts. The **`test-guide` skill** (`claude/skills/test-guide/`) drives it, and `/delegate` streams use it at the test gate, linking the guide next to the text test flow.
