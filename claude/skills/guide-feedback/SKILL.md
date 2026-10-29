@@ -61,7 +61,8 @@ An item PJF replies to again re-opens; pick it up next round.
   (matched by step title). Re-rendering a board change needs the changed files in the worktree; the
   platform push is the orchestrator's (`test-push`).
 - Tell PJF, in one short block: what was answered, changed (commits), parked, and still open
-  (waiting on whom), then the guide link on its own line, and **reload the guide** to see the replies.
+  (waiting on whom), then the guide link on its own line. Replies show up in an open guide on their own
+  (the page re-reads the file); only a re-render (new screens) needs a reload, and the page offers it.
 - In a `/delegate` stream, also `SendMessage` the orchestrator the same summary, plus "needs re-test-push"
   if board files changed.
 
