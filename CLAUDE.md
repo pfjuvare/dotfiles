@@ -66,7 +66,7 @@ are live and either can be used.
 - **Skipped under WSL**: WSL2 has no access to the host's raw keyboard input, so kanata there can't intercept physical keys. Home row mods on a WSL machine require running kanata natively on the Windows host instead (not covered by this repo).
 - **macOS requires manual steps**: installing the Karabiner-DriverKit-VirtualHIDDevice driver and approving it in System Settings can't be scripted — `install.sh` prints the steps instead of running them.
 
-## Session orchestrator (optional top tier for streams)
+## Session orchestrator (optional top tier of Streams, the orchestrator system)
 
 `claude/skills/session-orchestrator/` adds a tier above the per-repo orchestrators (`/start-orchestrator`,
 `/delegate`): one Claude in its own tmux session (`orch`) that routes PJF's instructions to each session's
