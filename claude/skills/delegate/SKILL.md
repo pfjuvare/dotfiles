@@ -80,7 +80,8 @@ You are in **plan mode**. Do NOT edit files or implement anything yet.
    commit with named files.
 6. **Review**: a fresh subagent reviews `git diff <base-sha>..HEAD` against the card and the project rules
    (CLAUDE.md, memory). Fix confirmed findings; commit.
-7. **Test gate**: give PJF a concise test flow here (position, steps, expected) + its guide link (test-guide
+7. **Test gate** (scope it to what you changed; for QA tickets, one section per reported defect: test-guide
+   skill, "Scope"): give PJF a concise test flow here (position, steps, expected) + its guide link (test-guide
    skill) + any list/group change he must push himself, and `SendMessage` the orchestrator
    (`<orchestrator-session>`) "ready to test" + the same flow and link. The orchestrator test-pushes your committed build once PJF says go. Fix → commit → tell it.
 8. **MR** on PJF's go after testing: follow the open-gitlab-mr skill (source `mr/<name>`, target `<target>`,
@@ -181,7 +182,8 @@ You are an **autonomous** stream (bypass mode). Take the card end to end without
 3. Validate (XML well-formedness, repo prettier on authored JS, project checks). Commit with named files.
 4. **Review**: launch a fresh subagent to review `git diff <base-sha>..HEAD` against the card and the
    project rules (CLAUDE.md, memory). Fix confirmed findings; commit.
-5. **Test gate**: `SendMessage` the orchestrator "ready to test" + a concise test flow (position, steps,
+5. **Test gate** (scope it to what you changed; QA tickets: per reported defect, test-guide skill "Scope"):
+   `SendMessage` the orchestrator "ready to test" + a concise test flow (position, steps,
    expected) + its guide link (test-guide skill) + any list/group change PJF must push himself. WAIT. The orchestrator test-pushes your
    committed build and PJF tests it. Fixes come back through the orchestrator: fix, commit, tell it
    (it re-pushes). Only on PJF's go → step 6. Never push to the platform yourself.

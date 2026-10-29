@@ -10,6 +10,22 @@ The guide **complements** the text test flow: still write the concise text flow 
 orchestrator and the MR), then generate the guide from it and link it. Tool: `~/code/webeoc-guide`
 (README there has the full flow-file format; `examples/agvic-branch-input.yaml` is a worked example).
 
+## Scope: test what changed, nothing more
+
+The flow (text and guide alike) covers only what this stream changed, so PJF spends testing time where the
+risk is:
+
+- **One step per change you made**, or per behaviour the change affects. Don't add general re-checks of
+  things the change didn't touch, "while you're there" checks, or a full regression pass, unless an issue
+  was reported or you found one there.
+- **QA tickets and defect lists:** target each reported defect. The flow is organised by defect (in the
+  ticket's numbering), each step confirming that defect is fixed. One defect can need several steps if
+  several pieces of behaviour changed for it; defects closed with no change (by design, not reproducible)
+  get no step, just one line saying why.
+- **A side effect you know of** (you changed shared code, a list, a permission) earns one step for it. Name
+  it as the side effect so PJF knows why it's there.
+- If you think a wider re-test is genuinely needed, say so in one line and let PJF decide; don't build it in.
+
 ## Steps
 
 1. **Flow file**: write `<name>-guide.yaml` at the worktree / repo root (`<name>` = stream name, or a short
