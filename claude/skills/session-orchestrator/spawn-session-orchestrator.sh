@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# spawn-session-orchestrator.sh — open the session orchestrator: its own tmux session with one window in
-# the stream layout, Claude in bypass on /session-orchestrator. It routes PJF's instructions to the repo
+# spawn-session-orchestrator.sh — open the session orchestrator: its own tmux session with one window
+# (named session-orch) in the stream layout, Claude in bypass on /session-orchestrator. It routes PJF's instructions to the repo
 # orchestrators in the other tmux sessions (SendMessage), so he can drive them all from one place.
 #   +---------+-------------------+---------+
 #   |  shell  |  claude (50%)     |  nvim   |
@@ -50,7 +50,7 @@ mkdir -p "$home"
 # Size the detached session like the current client so the percentage splits come out right.
 size=()
 [ -n "${TMUX:-}" ] && size=(-x "$(tmux display -p '#{window_width}')" -y "$(tmux display -p '#{window_height}')")
-claude=$(tmux new-session -d -P -F '#{pane_id}' -s "$session" -n session-orchestrator -c "$dir" "${size[@]}")
+claude=$(tmux new-session -d -P -F '#{pane_id}' -s "$session" -n session-orch -c "$dir" "${size[@]}")
 note=$(tmux split-window -d -h -l 25% -P -F '#{pane_id}' -t "$claude" -c "$home")
 shell=$(tmux split-window -d -h -b -l 33% -P -F '#{pane_id}' -t "$claude" -c "$dir")
 sleep 0.5

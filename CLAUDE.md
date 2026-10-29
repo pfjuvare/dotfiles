@@ -73,7 +73,7 @@ are live and either can be used.
 repo orchestrator via `SendMessage` and relays back questions, test flows and MR links. It never
 implements, spawns streams, or does git/platform/tracker operations.
 
-- Start: `/session-orchestrator`, or `claude/skills/session-orchestrator/spawn-session-orchestrator.sh`
+- Start: `/session-orchestrator` (renames its tmux window `session-orch`), or `claude/skills/session-orchestrator/spawn-session-orchestrator.sh`
   (`--session`, `--dir`, `--no-switch`). Opens in bypass so incoming messages aren't held.
 - Discovery: tmux windows named `*orchestrator*`, matched to `ListAgents` rows by window id.
 - State/scratch: `~/.claude/session-orchestrator/{state,scratch}.md`.

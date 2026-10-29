@@ -20,21 +20,29 @@ own writes are limited to `~/.claude/session-orchestrator/{state,scratch}.md`.
 
 ## Start
 
-If this session isn't already the one in tmux session `orch` (check `tmux display -p '#S'`), start it:
+Already inside tmux (`$TMUX_PANE` set)? Then this pane is the session orchestrator: name its window
+`session-orch` (also turns off automatic-rename, so it stays put):
+
+```bash
+tmux rename-window -t "$TMUX_PANE" session-orch
+```
+
+Not in tmux, or PJF wants a fresh session? Start one:
 
 ```bash
 ~/.claude/skills/session-orchestrator/spawn-session-orchestrator.sh [--session orch] [--dir ~] [--no-switch]
 ```
 
-It opens a new tmux session with the stream layout (shell | Claude 50% | nvim scratch), Claude in
-**bypass** (any other mode holds incoming SendMessages for approval), and switches the client to it.
+It opens a new tmux session whose window is named `session-orch`, with the stream layout (shell | Claude
+50% | nvim scratch), Claude in **bypass** (any other mode holds incoming SendMessages for approval), and
+switches the client to it.
 
 ## Find the repo orchestrators
 
 Re-resolve every time you route; agent names change when a session restarts.
 
 1. `tmux list-windows -a -F '#S #{window_id} #W #{pane_current_path}'` — orchestrator windows are named
-   `*orchestrator*` (`<repo>-orchestrator` by default; agvic's is `uat-orchestrator`). Skip your own session.
+   `*orchestrator*` (`<repo>-orchestrator` by default; agvic's is `uat-orchestrator`). Skip your own window (`session-orch`).
 2. `ListAgents` — each row shows `tmux <session>:@<window_id>.%<pane>`. Match the window id to get the
    agent name to `SendMessage`.
 3. Record the map in `state.md`: tmux session → repo main checkout → orchestrator agent name.
