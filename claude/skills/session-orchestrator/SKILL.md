@@ -20,12 +20,16 @@ own writes are limited to `~/.claude/session-orchestrator/{state,scratch}.md`.
 
 ## Start
 
-Already inside tmux (`$TMUX_PANE` set)? Then this pane is the session orchestrator: name its window
-`session-orch` (also turns off automatic-rename, so it stays put):
+Already inside tmux (`$TMUX_PANE` set)? Then this pane is the session orchestrator: give its window the
+stream layout (shell | Claude 50% | nvim on `scratch.md`) and name it `session-orch`. That also turns off
+automatic-rename, so the name stays put:
 
 ```bash
-tmux rename-window -t "$TMUX_PANE" session-orch
+~/.claude/skills/session-orchestrator/spawn-session-orchestrator.sh --here
 ```
+
+It reuses the window's existing shell and nvim panes and creates the missing ones; an nvim already editing
+something opens the scratch in a new tab.
 
 This path keeps the session's current permission mode. If it isn't bypass, tell the user: incoming
 SendMessages will wait for approval, so restart this pane with `claude --dangerously-skip-permissions`.
