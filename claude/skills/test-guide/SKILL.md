@@ -18,8 +18,13 @@ orchestrator and the MR), then generate the guide from it and link it. Tool: `~/
 2. **Dev text = the text flow.** One step per flow step, the same terse wording: `instruction` is the action,
    `expect` the result, and callout `label`s are 1–3 words. `dev:` holds the implementation pointer (function,
    selector, what to check in data). Put `setup:` (position, incident, where to start) at the top.
-3. **UAT only with `--uat`** (never by default): add `uat:` overrides (title, intro, setup, scene name, and
-   per-step instruction / expect / callout text) in plain English with no code terms or field names, then render with `--uat`.
+   **Context first:** every step that changes behaviour gets a very concise `context:` (one or two lines)
+   saying what it was like before the change: the defect or the old state. `expect` then reads as the new
+   behaviour. Context shared by several steps goes once at scene level (`context:` on the scene). Don't repeat
+   what the scene or an earlier step already said. Pure setup or navigation steps get none. Take it from the
+   card, the ticket or the diff, never from a guess; if the before-state isn't known, leave it out.
+3. **UAT only with `--uat`** (never by default): add `uat:` overrides (title, intro, setup, scene name and
+   context, and per-step context / instruction / expect / callout text) in plain English with no code terms or field names, then render with `--uat`.
 4. **Data and mocks, not fixtures.** The view is compiled by the platform's own `view.xsl` (from
    `~/code/webeoc-src`) and the board's JS runs, so feed it what it reads:
    - `data:` builds the `/data` document. Use `record` for a details/input view, `records` for a list
