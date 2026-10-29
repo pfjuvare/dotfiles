@@ -306,7 +306,7 @@ if [ -f "$WEBEOC_GUIDE/package.json" ] && [ ! -d "$WEBEOC_GUIDE/node_modules" ];
   echo "Installing webeoc-guide dependencies + Playwright Chromium..."
   (cd "$WEBEOC_GUIDE" && npm ci && npx playwright install chromium-headless-shell)
   if [ "$PKG_MANAGER" = apt ]; then
-    sudo apt-get install -y libnss3 libnspr4 libasound2t64
+    sudo apt-get install -y libnss3 libnspr4 libasound2t64 xsltproc
   fi
 fi
 

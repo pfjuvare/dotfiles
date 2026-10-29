@@ -1,6 +1,6 @@
 ---
 name: test-guide
-description: Generate an annotated, screen-by-screen HTML test guide for a WebEOC test flow (view rendered offline from board source, with highlights, arrows and numbered callouts) and link it in the conversation. Dev guide by default; `--uat` for a plain-English pass/fail version for UAT testers. Use whenever you give PJF a testing flow for a WebEOC change (delegate stream test gate or repro flow, orchestrator relay, ad-hoc "give me a test flow"), or when he types /test-guide.
+description: Generate an annotated, screen-by-screen HTML test guide for a WebEOC test flow (view rendered offline through the platform's own view.xsl pipeline with the board's JS running, with highlights, arrows and numbered callouts) and link it in the conversation. Dev guide by default; `--uat` for a plain-English pass/fail version for UAT testers. Use whenever you give PJF a testing flow for a WebEOC change (delegate stream test gate or repro flow, orchestrator relay, ad-hoc "give me a test flow"), or when he types /test-guide.
 argument-hint: '[--uat] [<stream / topic>]'
 ---
 
@@ -20,13 +20,23 @@ orchestrator and the MR), then generate the guide from it and link it. Tool: `~/
    selector, what to check in data). Put `setup:` (position, incident, where to start) at the top.
 3. **UAT only with `--uat`** (never by default): add `uat:` overrides (title, intro, setup, scene name, and
    per-step instruction / expect / callout text) in plain English with no code terms or field names, then render with `--uat`.
-4. **Fixtures from code, not guesses.** The board's JS doesn't run in the preview. Read the view's board JS
-   and fake what it would do (select options, hint text, locked or disabled states, toggled sections) with
-   `fixtures` / `set`. MDB selects need `mdbSelect: true`. Use sample data, never real records. If a
-   behaviour can't be read from code, leave it out of the visuals and keep it in the text only.
+4. **Data and mocks, not fixtures.** The view is compiled by the platform's own `view.xsl` (from
+   `~/code/webeoc-src`) and the board's JS runs, so feed it what it reads:
+   - `data:` builds the `/data` document. Use `record` for a details/input view, `records` for a list
+     view (a list without them renders empty), `attrs: { dataid: 0 }` + `records: []` for an Add form,
+     `params` for ViewParameters, and `expressions` for separate-query expressions. Board permission
+     tags default to every tag the view checks.
+   - `api:` holds REST mocks for what the board JS fetches: read its `fetchRecords` / `getRecords` calls
+     and give `display/<view>` arrays in that view's field names. `embeds:` gives data to embedded views.
+   - Use **sample data, never real records**. Fixtures (DOM edits) are a last resort; board JS may overwrite them.
+   - If the render doesn't look right, check the dev guide's Network and console notes for the call that
+     needs a mock before reaching for a fixture.
+   - If a behaviour can't be produced this way, keep it in the text only.
 5. **Render**: `node ~/code/webeoc-guide/bin/webeoc-guide.js render <name>-guide.yaml [--uat]`. A selector
    that matches nothing fails the run: fix the flow, or the view if the flow caught a real gap. The first
    time you render a view, add `--debug <scratch dir>` and look at the PNG to check the render looks right.
+   `do:` steps act like a user: `select` opens the MDB dropdown and clicks the option, and `click` with
+   `force: true` clicks a disabled control (e.g. to show a lock holding).
 6. **Reply**: after the text flow, add one line saying what the guide covers, then the `link` URL the CLI
    printed on its own line:
    ```
@@ -45,11 +55,12 @@ orchestrator and the MR), then generate the guide from it and link it. Tool: `~/
 ## Skip it (one line saying why) when
 
 - the flow isn't visual: list/group pushes, REST data scripts, server-side expressions only.
-- the screen is built almost entirely by board JS from REST data (most list / details views), so it would
-  need fixtures for nearly everything. A guide is still worth it if the changed controls are static markup.
+- the screen depends on data the flow can't sensibly mock (e.g. a large live dataset or a third-party
+  integration), so the picture would mislead.
 
 ## Safety
 
 The renderer never contacts WebEOC. `*.webeocasp.com` is refused even if allowlisted, because Imperva
-rate-blocks tooling. Don't add WebEOC hosts to `allowHosts`. Guides use sample data only, so they're safe to
+rate-blocks tooling, and board REST calls only ever hit the `api` mocks (or a stub 404). Don't add WebEOC hosts
+to `allowHosts`. Guides use sample data only, so they're safe to
 attach to an MR or send to a tester.
