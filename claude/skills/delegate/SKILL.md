@@ -154,6 +154,9 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to pus
 - **You are the escalation point.** Streams `SendMessage` you questions. Answer yourself only when the
   card, repo, memory or an earlier PJF answer settles it; otherwise ask PJF (one line per question, card
   named) and relay his answer verbatim-in-substance. Never invent requirements to keep a stream moving.
+- **Several streams tested together** (a combined test-push or one test round): give the tester ONE guide
+  with a section per stream, merged from each stream's standalone flow (test-guide skill, "Several tickets or
+  streams at once"), not a guide each or a blended flow.
 - **Ready to test** = the stream sends you its test flow. Run `test-push.sh push <name>` (dry-run first),
   record status `testing`, and send PJF the test flow and its guide link. (Regular streams: same, but only once PJF says go —
   he already has the flow in the stream's pane.) Relay his result: fixes → the stream commits and

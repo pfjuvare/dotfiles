@@ -75,6 +75,21 @@ risk is:
 - **Orchestrator**: relay the stream's guide link along with its test flow. For the post-merge live re-test,
   reuse the stream's guide (re-render it if the flow changed).
 
+## Several tickets or streams at once: one guide, a section each
+
+When one test round covers several tickets or streams (a combined test-push, a batch PJF tests together),
+make **one** guide with a **separate section per ticket / stream**. Not one guide each, and not a single
+blended flow that mixes their steps.
+
+- Each stream writes its part as a standalone flow: its own scenes, scene-level `api` mocks, and scene names
+  prefixed with its ticket key or card shortLink (`PSAPAC-1519 · Vaccinations`), so the sections read
+  apart in the guide and its step list.
+- The orchestrator merges those scenes, in ticket order, into one flow. It renders that flow against a
+  board copy built from dev plus every stream's changed files, so the screens match what's live on the
+  test platform. (`boardDir` is flow-level only, which is why the merged board copy is needed.)
+- The "Scope" rules apply per section: each covers only its own ticket's changes or defects.
+- With a combined test-push, set the merged flow's `testPush:` to the combined stream.
+
 ## Feedback in the guide
 
 Every guide has a feedback box under each step and a General section: PJF adds questions, change requests
