@@ -62,10 +62,10 @@ orchestrator and the MR), then generate the guide from it and link it. Tool: `~/
 ## Feedback in the guide
 
 Every guide has a feedback box under each step and a General section: PJF adds questions, change requests
-and notes, then **Save feedback to file** writes them into the guide's HTML. Re-renders keep them. When
+and notes, then **Send to agent** saves them into the guide's HTML and asks the watching agent to act (**Save** is a draft). Re-renders keep them. When
 PJF says there's feedback in a guide, or the orchestrator relays it, use the **guide-feedback** skill
-(`webeoc-guide feedback` / `respond`); its watch mode picks up each save as PJF makes it. Mention the feedback box once, the first time you link a guide in a
-stream: "Questions or changes? Add them in the guide and click Save feedback to file."
+(`webeoc-guide feedback` / `respond`); its watch mode acts on Send to agent as soon as PJF makes it. Mention the feedback box once, the first time you link a guide in a
+stream: "Questions or changes? Add them in the guide and press Send to agent."
 
 ## Skip it (one line saying why) when
 

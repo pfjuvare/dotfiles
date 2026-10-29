@@ -7,7 +7,7 @@ argument-hint: '[--watch] [<guide.html>]'
 # /guide-feedback
 
 Test guides (`test-guide` skill) carry a feedback box under every step and a General section. PJF
-adds items of three kinds and clicks **Save feedback to file**, which writes them into the guide's own
+adds items of three kinds and presses **Send to agent** (or **Save** for a draft), which writes them into the guide's own
 HTML. This skill is the other half of that loop: read the items, act on each, reply in the guide, and
 hand it back.
 
@@ -20,7 +20,7 @@ hand it back.
 - `G feedback <guide.html>` lists the open items with ids, grouped by step (`--all` includes resolved
   ones, `--json` the raw data). Each item has a kind, its text, the step it sits under, and any earlier
   replies. A `[was on: …]` tag means its step was renamed or removed in a re-render.
-- **Nothing there?** PJF probably hasn't saved. Say so: "Save feedback to file" in the guide's
+- **Nothing there?** PJF probably hasn't saved. Say so: "Send to agent" (or "Save") in the guide's
   sidebar, or paste **Copy feedback** into the chat. If they saved to a downloaded copy instead, ask for
   its path and read that file.
 
@@ -63,11 +63,12 @@ An item PJF replies to again re-opens; pick it up next round.
 
 ## Watch mode (`--watch`, or "watch the guide")
 
-Act on each save as soon as PJF makes it, instead of waiting to be told:
+Act as soon as PJF presses **Send to agent** in the guide, instead of waiting to be told:
 
 1. Arm: run `G watch <guide.html> [--since <sig>]` with the Bash tool's **`run_in_background: true`**.
-   It exits when PJF saves new feedback (new items, edits, their replies), not on your own replies or
-   re-renders. Say once: "Watching <guide>: save feedback in the guide and I'll pick it up."
+   It exits when PJF presses Send to agent (and marks the request picked up, which the page shows);
+   plain Saves are drafts and don't wake it. `--on save` wakes on every save of new feedback instead.
+   Say once: "Watching <guide>: press Send to agent when you want me to act."
 2. When it exits 0, its output is the open items plus a `sig <value>` line: run steps 2–4 above on them.
 3. Re-arm with `--since <that sig>` (from step 2's output, not a fresh read), so feedback saved while you
    were working still triggers. Keep looping.

@@ -87,9 +87,9 @@ implements, spawns streams, or does git/platform/tracker operations.
 - Screens are rendered **offline through the platform's own pipeline**: `admin_fieldlist.xsl` and `view.xsl` from `~/code/webeoc-src`, run on a sample `/data`. The board's JS runs against REST mocks from the flow. WebEOC hosts are never contacted, and the screens are not live screenshots. Without webeoc-src it falls back to a hand-written preview renderer.
 - XSLT engine: `xsltproc` (`sudo apt-get install -y xsltproc`), else Python `lxml`, else Chromium's deprecated `XSLTProcessor`.
 - Stream guide files (`/*-guide.*`) are git-excluded by `spawn-stream.sh`.
-- **Feedback loop**: each guide has per-step feedback boxes (question / change / note) that "Save feedback to
-  file" writes into the guide's HTML. `webeoc-guide feedback <guide>` lists open items, `respond` writes agent
-  replies, `watch` blocks until the next save of new feedback; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
+- **Feedback loop**: each guide has per-step feedback boxes (question / change / note) that "Send to agent" saves into the
+  guide's HTML ("Save" = draft). `webeoc-guide feedback <guide>` lists open items, `respond` writes agent
+  replies, `watch` blocks until Send to agent is pressed; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
   through it.
 - Live-screenshot mode is parked because Imperva blocks tooling on agvic. See vault note `webeoc-guide - playwright annotated test guides (parked)`.
 - `install.sh` installs its npm dependencies and Playwright Chromium (plus `libnss3 libnspr4 libasound2t64` on apt) when `~/code/webeoc-guide` exists without `node_modules`.
