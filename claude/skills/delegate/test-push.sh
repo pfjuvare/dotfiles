@@ -7,11 +7,15 @@
 #   test-push.sh status                       who holds which asset on the platform right now
 #   test-push.sh release <stream> [--restore] drop the stream's claims; --restore re-pushes the dev
 #                                             branch's version of each claimed asset (rejected/abandoned work)
+#   test-push.sh before <stream> [--dry-run]  put the dev branch's version of the stream's claimed assets back
+#                                             on the platform but KEEP the claims (before/after comparison)
+#   test-push.sh after <stream> [--dry-run]   put the stream's build back (same as push)
 #   test-push.sh clear <asset>...             drop claims on assets dev has since re-pushed (merge-and-deploy)
 #
 # <stream> = worktree name (.claude/worktrees/<stream>). Assets = board-displays/inputs/resources changed
 # between merge-base(dev, stream HEAD) and HEAD, in any boards/<dir>/; each is keyed "<dir>/<asset>" and
-# pushed from its own board dir. Claims live in <git-common-dir>/test-slots.tsv.
+# pushed from its own board dir. Claims live in <git-common-dir>/test-slots.tsv
+# (asset, stream, sha, time, state = after|before; a missing state means after).
 # `push` refuses (exit 1, nothing pushed) when:
 #   - the worktree has uncommitted tracked changes (the push must match a commit);
 #   - an asset is claimed by ANOTHER stream (one live version per asset — test, then release/merge);
@@ -73,6 +77,26 @@ do_push() {
   done
 }
 
+# dev_keys <stream> → the stream's claimed assets that exist on the dev branch, push-ordered like
+# `push` (tables, resources, schema views, other views); assets new in the stream go to stderr.
+dev_keys() {
+  local a d found
+  mapfile -t claimed < <(awk -F'\t' -v s="$1" '$2==s{print $1}' "$slots")
+  for a in "${claimed[@]}"; do
+    found=0; for d in "$main/boards/$(kdir "$a")"/board-*/"$(kname "$a")"; do [ -e "$d" ] && found=1; done
+    if [ $found -eq 0 ]; then echo "$a" >&2; continue; fi
+    if [ -d "$main/boards/$(kdir "$a")/board-tables/$(kname "$a")" ]; then printf '0\t%s\n' "$a"
+    elif [ -d "$main/boards/$(kdir "$a")/board-resources/$(kname "$a")" ]; then printf '1\t%s\n' "$a"
+    else case "$(kname "$a")" in "Util - Schema - "*) printf '2\t%s\n' "$a" ;; *) printf '3\t%s\n' "$a" ;; esac; fi
+  done | sort | cut -f2
+}
+
+# set_state <stream> <after|before>
+set_state() {
+  local tmp; tmp=$(mktemp)
+  awk -F'\t' -v s="$1" -v st="$2" 'BEGIN{OFS="\t"} $2==s{$5=st} {print}' "$slots" >"$tmp"; mv "$tmp" "$slots"
+}
+
 ordered() { awk -F'\t' '$1=="table"{print 0"\t"$2} $1=="res"{print 1"\t"$2} $1=="schema"{print 2"\t"$2} $1=="view"{print 3"\t"$2}' | sort | cut -f2; }
 
 cmd=${1:-}; shift || true
@@ -109,16 +133,16 @@ case "$cmd" in
     now=$(date '+%F %H:%M')
     tmp=$(mktemp)
     awk -F'\t' -v s="$stream" '$2!=s' "$slots" >"$tmp"
-    awk -F'\t' -v s="$stream" '$2==s' "$slots" | while IFS=$'\t' read -r a _ _ _; do
-      printf '%s\n' "${push[@]}" | grep -qxF "$a" || printf '%s\t%s\t%s\t%s\n' "$a" "$stream" "${head:0:7}" "$now"
+    awk -F'\t' -v s="$stream" '$2==s' "$slots" | while IFS=$'\t' read -r a _ _ _ _; do
+      printf '%s\n' "${push[@]}" | grep -qxF "$a" || printf '%s\t%s\t%s\t%s\tafter\n' "$a" "$stream" "${head:0:7}" "$now"
     done >>"$tmp"
-    for a in "${push[@]}"; do printf '%s\t%s\t%s\t%s\n' "$a" "$stream" "${head:0:7}" "$now"; done >>"$tmp"
+    for a in "${push[@]}"; do printf '%s\t%s\t%s\t%s\tafter\n' "$a" "$stream" "${head:0:7}" "$now"; done >>"$tmp"
     mv "$tmp" "$slots"
     echo "under test: $stream (${#push[@]} asset(s))"
     ;;
   status)
     [ -s "$slots" ] || { echo "platform = $dev (no test claims)"; exit 0; }
-    sort -t$'\t' -k2,2 -k1,1 "$slots" | awk -F'\t' '{ if ($2!=p) {print $2" @ "$3" ("$4")"; p=$2} print "  "$1 }'
+    sort -t$'\t' -k2,2 -k1,1 "$slots" | awk -F'\t' -v dev="$dev" '{ if ($2!=p) {st=($5=="before" ? "BEFORE: "dev"'"'"'s version live" : "after: stream build live"); print $2" @ "$3" ("$4") — "st; p=$2} print "  "$1 }'
     ;;
   release)
     stream=${1:-}; [ -n "$stream" ] || die "stream name required"
@@ -126,29 +150,37 @@ case "$cmd" in
     [ ${#claimed[@]} -gt 0 ] || { echo "$stream holds no claims"; exit 0; }
     if [ "${2:-}" = --restore ]; then
       [ -z "$(git -C "$main" status --porcelain --untracked-files=no)" ] || die "main checkout has tracked changes"
-      keep=() gone=()
-      for a in "${claimed[@]}"; do
-        found=0; for d in "$main/boards/$(kdir "$a")"/board-*/"$(kname "$a")"; do [ -e "$d" ] && found=1; done
-        if [ $found -eq 1 ]; then keep+=("$a"); else gone+=("$a"); fi
-      done
-      mapfile -t keep < <(for a in "${keep[@]}"; do
-        case "$(kname "$a")" in "Util - Schema - "*) printf '1\t%s\n' "$a" ;; *)
-          if [ -d "$main/boards/$(kdir "$a")/board-resources/$(kname "$a")" ]; then printf '0\t%s\n' "$a"; else printf '2\t%s\n' "$a"; fi ;; esac
-      done | sort | cut -f2)
+      gonef=$(mktemp); mapfile -t keep < <(dev_keys "$stream" 2>"$gonef"); mapfile -t gone <"$gonef"; rm -f "$gonef"
       [ ${#keep[@]} -eq 0 ] || do_push "$main" "${keep[@]}"
       [ ${#gone[@]} -eq 0 ] || printf 'new asset, not on %s — delete in WebEOC admin if unwanted: %s\n' "$dev" "${gone[@]}"
     fi
     tmp=$(mktemp); awk -F'\t' -v s="$stream" '$2!=s' "$slots" >"$tmp"; mv "$tmp" "$slots"
     echo "released $stream (${#claimed[@]} asset(s))"
     ;;
+  before)
+    stream=${1:-}; [ -n "$stream" ] || die "stream name required"; dry=0; [ "${2:-}" = --dry-run ] && dry=1
+    awk -F'\t' -v s="$stream" '$2==s{f=1} END{exit !f}' "$slots" || die "$stream holds no claims: test-push push it first"
+    [ -z "$(git -C "$main" status --porcelain --untracked-files=no)" ] || die "main checkout has tracked changes"
+    gonef=$(mktemp); mapfile -t keep < <(dev_keys "$stream" 2>"$gonef"); mapfile -t gone <"$gonef"; rm -f "$gonef"
+    echo "$stream: before = $dev @ $(git -C "$main" log --oneline -1 HEAD)"
+    [ ${#keep[@]} -eq 0 ] || printf 'push:  %s\n' "${keep[@]}"
+    [ ${#gone[@]} -eq 0 ] || printf 'new in %s, no before version (stays as the stream build): %s\n' "$stream" "${gone[@]}"
+    [ $dry -eq 0 ] || exit 0
+    [ ${#keep[@]} -eq 0 ] || do_push "$main" "${keep[@]}"
+    set_state "$stream" before
+    echo "before: $dev's version live for $stream (claims kept; test-push after $stream to put the build back)"
+    ;;
+  after)
+    exec "$0" push "$@"
+    ;;
   clear)
     [ $# -gt 0 ] || die "asset keys (<dir>/<asset>) required"
     tmp=$(mktemp)
-    while IFS=$'\t' read -r a s sha t; do
-      if printf '%s\n' "$@" | grep -qxF "$a"; then echo "cleared $a (was $s @ $sha)" >&2; else printf '%s\t%s\t%s\t%s\n' "$a" "$s" "$sha" "$t"; fi
+    while IFS=$'\t' read -r a s sha t st; do
+      if printf '%s\n' "$@" | grep -qxF "$a"; then echo "cleared $a (was $s @ $sha)" >&2; else printf '%s\t%s\t%s\t%s\t%s\n' "$a" "$s" "$sha" "$t" "${st:-after}"; fi
     done <"$slots" >"$tmp"
     mv "$tmp" "$slots"
     ;;
-  -h|--help|"") sed -n '2,23p' "$0" ;;
+  -h|--help|"") sed -n '2,27p' "$0" ;;
   *) die "unknown command $cmd" ;;
 esac

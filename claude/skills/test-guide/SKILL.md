@@ -67,6 +67,13 @@ PJF says there's feedback in a guide, or the orchestrator relays it, use the **g
 (`webeoc-guide feedback` / `respond`); its watch mode acts on Send to agent as soon as PJF makes it. Mention the feedback box once, the first time you link a guide in a
 stream: "Questions or changes? Add them in the guide and press Send to agent."
 
+## Before/after toggle
+
+In a stream worktree, the guide's sidebar shows a **Test platform (dev)** toggle once the stream is
+test-pushed: it switches the platform between dev's version and the stream's build (`test-push before|after`,
+claims kept) so the tester can compare. If the claims belong to a combined build (one test-push for several
+streams), add `testPush: <that stream>` at the top of the flow file. Never press it on the tester's behalf.
+
 ## Skip it (one line saying why) when
 
 - the flow isn't visual: list/group pushes, REST data scripts, server-side expressions only.

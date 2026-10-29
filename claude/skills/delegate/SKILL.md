@@ -205,6 +205,13 @@ before review. `~/.claude/skills/delegate/test-push.sh` (on PJF's PATH as `test-
   `.git/test-slots.tsv`.
 - `status` — what's on the platform right now, per stream. Check it before telling PJF what he's testing.
 - `release <name> [--restore]` — drop the claims; `--restore` re-pushes dev's version (rejected/abandoned).
+- `before <name>` / `after <name>` — switch the stream's claimed assets between dev's version and the stream's
+  build, **keeping the claims**, so PJF can compare before/after. `status` shows which side is live. PJF normally
+  does this from the test guide's "Test platform" toggle (through the webeoc-guide helper); a toggle click is
+  PJF's approval for that one switch. Never run `before`/`after` yourself unless PJF asks, and never call the
+  helper's `/testpush` endpoint. A stream left on `before` isn't showing its change: check `status` before relaying
+  "ready to test" or re-test steps. For a combined build of several streams, give each stream's guide flow
+  `testPush: <combined stream>` so its toggle drives that build.
 - Merging is the normal release: `merge-and-deploy.sh` re-pushes the merged assets from dev and clears
   their claims.
 

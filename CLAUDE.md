@@ -92,6 +92,8 @@ implements, spawns streams, or does git/platform/tracker operations.
   replies, `watch` blocks until Send to agent is pressed; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
   through it. `webeoc-guide serve` (systemd user service `webeoc-guide`, port 47321, set up by `install.sh`)
   saves feedback without a file picker and wakes the stream on Send to agent by typing into its Claude pane.
+- **Before/after toggle**: in a stream worktree the guide's "Test platform" box runs `test-push before|after`
+  (claims kept) through the helper. `delegate/test-push.test.sh` tests test-push against a fake weboard.
 - **Tests**: `npm test` in `~/code/webeoc-guide` (~50 s) covers the feedback data, CLI, helper and the page in
   all modes. Run it before every webeoc-guide commit and add a test with each feature or fix.
 - Live-screenshot mode is parked because Imperva blocks tooling on agvic. See vault note `webeoc-guide - playwright annotated test guides (parked)`.
