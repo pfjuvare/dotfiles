@@ -89,7 +89,7 @@ implements, spawns streams, or does git/platform/tracker operations.
 - Stream guide files (`/*-guide.*`) are git-excluded by `spawn-stream.sh`.
 - **Feedback loop**: each guide has per-step feedback boxes (question / change / note) that "Save feedback to
   file" writes into the guide's HTML. `webeoc-guide feedback <guide>` lists open items, `respond` writes agent
-  replies; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
+  replies, `watch` blocks until the next save of new feedback; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
   through it.
 - Live-screenshot mode is parked because Imperva blocks tooling on agvic. See vault note `webeoc-guide - playwright annotated test guides (parked)`.
 - `install.sh` installs its npm dependencies and Playwright Chromium (plus `libnss3 libnspr4 libasound2t64` on apt) when `~/code/webeoc-guide` exists without `node_modules`.

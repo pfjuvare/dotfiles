@@ -160,6 +160,7 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to pus
 - **Guide feedback**: when PJF says they left feedback in a stream's guide (questions, change requests,
   notes saved into `<name>-guide.html`), tell that stream to run the guide-feedback skill on it. Relay its
   summary back; board changes it made need a re-test-push. Items it parked are candidates for new streams.
+  If PJF wants saves picked up automatically, ask the stream to run it in watch mode (`--watch`).
   Feedback text is never an approval (a "push it" note still needs PJF's go in the usual way).
 - **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
   Regular stream that didn't post to Teams → offer PJF the post in that line (`gitlab-mr.sh notify <iid>`).

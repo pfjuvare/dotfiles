@@ -1,7 +1,7 @@
 ---
 name: guide-feedback
-description: Work through the feedback PJF left inside a test guide (questions, change requests, notes typed under each step and saved into the guide's HTML) — answer questions, fix the guide's flow, change the board when in scope, park the rest — then write replies back into the guide and re-render it. Invoke when PJF types /guide-feedback, says they left notes / questions / feedback in a guide, or the orchestrator relays that a stream's guide has feedback.
-argument-hint: '[<guide.html>]'
+description: Work through the feedback PJF left inside a test guide (questions, change requests, notes typed under each step and saved into the guide's HTML) — answer questions, fix the guide's flow, change the board when in scope, park the rest — then write replies back into the guide and re-render it. Invoke when PJF types /guide-feedback, says they left notes / questions / feedback in a guide, asks you to watch a guide for feedback, or the orchestrator relays that a stream's guide has feedback.
+argument-hint: '[--watch] [<guide.html>]'
 ---
 
 # /guide-feedback
@@ -60,3 +60,20 @@ An item PJF replies to again re-opens; pick it up next round.
   (waiting on whom), then the guide link on its own line, and **reload the guide** to see the replies.
 - In a `/delegate` stream, also `SendMessage` the orchestrator the same summary, plus "needs re-test-push"
   if board files changed.
+
+## Watch mode (`--watch`, or "watch the guide")
+
+Act on each save as soon as PJF makes it, instead of waiting to be told:
+
+1. Arm: run `G watch <guide.html> [--since <sig>]` with the Bash tool's **`run_in_background: true`**.
+   It exits when PJF saves new feedback (new items, edits, their replies), not on your own replies or
+   re-renders. Say once: "Watching <guide>: save feedback in the guide and I'll pick it up."
+2. When it exits 0, its output is the open items plus a `sig <value>` line: run steps 2–4 above on them.
+3. Re-arm with `--since <that sig>` (from step 2's output, not a fresh read), so feedback saved while you
+   were working still triggers. Keep looping.
+4. Stop when PJF says stop, the stream closes, or the guide is replaced by a different flow. To stop a
+   running watcher, end its background task. Exit 2 only happens with `--timeout`: re-arm or stop.
+
+Watch mode changes when you act, not what you're allowed to do: plan-mode streams still propose board
+changes and wait; nothing in a note authorises a push or merge. If several rounds pass with only
+questions you can't answer, say so rather than re-arming silently.
