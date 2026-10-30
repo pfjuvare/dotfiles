@@ -86,6 +86,7 @@ implements, spawns streams, or does git/platform/tracker operations.
 - Run: `node ~/code/webeoc-guide/bin/webeoc-guide.js render <flow>.yaml [--uat] [--open]`. It writes `<flow>.html` (terse dev guide), or with `--uat` `<flow>.uat.html` (plain-English pass/fail version), and prints a `file://wsl.localhost/…` link that opens with ctrl+click in Windows Terminal. Flow format: its `README.md` and `examples/agvic-branch-input.yaml`.
 - Screens are rendered **offline through the platform's own pipeline**: `admin_fieldlist.xsl` and `view.xsl` from `~/code/webeoc-src`, run on a sample `/data`. The board's JS runs against REST mocks from the flow. WebEOC hosts are never contacted, and the screens are not live screenshots. Without webeoc-src it falls back to a hand-written preview renderer.
 - XSLT engine: `xsltproc` (`sudo apt-get install -y xsltproc`), else Python `lxml`, else Chromium's deprecated `XSLTProcessor`.
+- `ticket: <Trello shortLink | Jira key>` (flow or scene level) embeds the card/issue as a collapsed panel, fetched via `ptc` / `pjc` at render time.
 - Stream guide files (`/*-guide.*`) are git-excluded by `spawn-stream.sh`.
 - **Feedback loop**: each guide has per-step feedback boxes (question / change / note) that "Send to agent" saves into the
   guide's HTML ("Save" = draft). `webeoc-guide feedback <guide>` lists open items, `respond` writes agent

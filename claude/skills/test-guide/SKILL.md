@@ -31,6 +31,9 @@ risk is:
 1. **Flow file**: write `<name>-guide.yaml` at the worktree / repo root (`<name>` = stream name, or a short
    topic slug outside a stream). Make sure `/*-guide.*` is in `$(git rev-parse --git-common-dir)/info/exclude`
    (new streams get it from `spawn-stream.sh`). `boardDir` is relative to the flow file, e.g. `boards/agvic-ops`.
+   If the work is for a Trello card or Jira issue, set `ticket: <shortLink | KEY>` at the top: the guide then
+   embeds the ticket (description, checklists, comments) as a collapsed panel, fetched via `ptc` / `pjc` at
+   render time.
 2. **Dev text = the text flow.** One step per flow step, the same terse wording: `instruction` is the action,
    `expect` the result, and callout `label`s are 1–3 words. `dev:` holds the implementation pointer (function,
    selector, what to check in data). Put `setup:` (position, incident, where to start) at the top.
@@ -83,7 +86,8 @@ blended flow that mixes their steps.
 
 - Each stream writes its part as a standalone flow: its own scenes, scene-level `api` mocks, and scene names
   prefixed with its ticket key or card shortLink (`PSAPAC-1519 · Vaccinations`), so the sections read
-  apart in the guide and its step list.
+  apart in the guide and its step list. Each scene also gets `ticket: <shortLink | KEY>`, so each section
+  shows its own ticket panel (once per run of scenes for the same ticket).
 - The orchestrator merges those scenes, in ticket order, into one flow. It renders that flow against a
   board copy built from dev plus every stream's changed files, so the screens match what's live on the
   test platform. (`boardDir` is flow-level only, which is why the merged board copy is needed.)
