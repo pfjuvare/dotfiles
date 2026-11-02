@@ -26,6 +26,21 @@ risk is:
   it as the side effect so PJF knows why it's there.
 - If you think a wider re-test is genuinely needed, say so in one line and let PJF decide; don't build it in.
 
+## Test data on dev: set it up, don't leave it to be found
+
+When a flow needs dev records in a state dev doesn't have (e.g. a role assignment in Withdrawal
+Supported or Accepted (Pending)), sort the setup out while making the guide. Don't leave it as
+prerequisites for PJF to discover.
+
+- Set the records up on **DEV** as part of making the guide (`webeoc-rest-script` skill, a narrow write
+  view, dry run first). **Confirm with PJF before the first data write.** Never on Demo/Test.
+- With no safe write path (no narrow REST view for the field, or the change must go through the UI's
+  workflow), make it an explicit numbered **Setup (do first)** list at the very top: in the flow's
+  `setup:` and as the first lines of the text flow. Give the person, the record and old → new value.
+  Never bury setup in a scene description or a step's context.
+- The guide's header says what was set up or changed on dev, so expected counts and states match
+  what PJF will see. Expected numbers come from dev's state after that setup, not from a guess.
+
 ## Steps
 
 1. **Flow file**: write `<name>-guide.yaml` at the worktree / repo root (`<name>` = stream name, or a short
