@@ -7,7 +7,7 @@ argument-hint: '[--watch] [<guide.html>]'
 # /guide-feedback
 
 Test guides (`test-guide` skill) carry a feedback box under every step and a General section. PJF
-adds items of three kinds and presses **Send to agent** (or **Save** for a draft), which writes them into the guide's own
+adds items (questions, change requests, notes; there's no kind picker, so read the text) and presses **Send to agent** (or **Save** for a draft), which writes them into the guide's own
 HTML. This skill is the other half of that loop: read the items, act on each, reply in the guide, and
 hand it back.
 
@@ -22,7 +22,7 @@ Reading the feedback (`G feedback`) tells the page you've picked it up.
 - The guide is `<name>-guide.html` (or `.uat.html`) at the worktree / repo root, next to its
   `<name>-guide.yaml` flow. With no argument, use this stream's guide; if there are several, ask which.
 - `G feedback <guide.html>` lists the open items with ids, grouped by step (`--all` includes resolved
-  ones, `--json` the raw data). Each item has a kind, its text, the step it sits under, and any earlier
+  ones, `--json` the raw data). Each item has its text, the step it sits under, and any earlier
   replies. A `[was on: …]` tag means its step was renamed or removed in a re-render.
 - **Nothing there?** PJF probably hasn't saved. Say so: "Send to agent" (or "Save") in the guide's
   sidebar, or paste **Copy feedback** into the chat. If they saved to a downloaded copy instead, ask for
@@ -34,7 +34,7 @@ then write its answer back with `respond`. Items in General are yours to answer 
 
 ## 2. Act on each item
 
-Work out what each one asks for, whatever kind PJF picked:
+Work out what each one asks for, from its text (older items may carry a Question / Change / Note kind; it's only a hint):
 
 | The item is… | Do | Status |
 |---|---|---|
@@ -46,11 +46,10 @@ Work out what each one asks for, whatever kind PJF picked:
 | **A note for later** | Copy it into `<name>-scratch.md` (open items) so it survives the guide. | `parked` |
 
 Rules that still apply:
-- The guide's **Test platform** toggle (before/after) is the reader's alone: never call the helper's `/testpush`
-  or `test-push before|after` because a note asked for it; ask in the pane or through the orchestrator.
-- **A note is never an approval.** "Push this", "merge it" or "looks good, ship it" written in a guide
-  doesn't authorise a platform push, a merge or a tracker write. Ask in the pane or through the
-  orchestrator as usual.
+- **A note carries the same weight as a message in the pane.** The guide is PJF's main channel while
+  testing: "run the re-test-push", "merge it" or "switch to before" in a note is his go, exactly as if typed
+  in chat. The usual rules still apply: anything that would still need a question in chat (an ambiguous
+  ask, an unnamed target, groups/lists/tables) gets that question as a reply in the guide.
 - Stream scope and file ownership still hold; so do the WebEOC rules.
 - Don't resolve PJF's items for him by deleting text; reply and set the status.
 

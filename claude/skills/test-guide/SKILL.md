@@ -32,7 +32,7 @@ risk is:
    topic slug outside a stream). Make sure `/*-guide.*` is in `$(git rev-parse --git-common-dir)/info/exclude`
    (new streams get it from `spawn-stream.sh`). `boardDir` is relative to the flow file, e.g. `boards/agvic-ops`.
    If the work is for a Trello card or Jira issue, set `ticket: <shortLink | KEY>` at the top: the guide then
-   embeds the ticket (description, checklists, comments) as a collapsed panel, fetched via `ptc` / `pjc` at
+   embeds the ticket (description, checklists, comments) as an expanded panel, fetched via `ptc` / `pjc` at
    render time.
 2. **Dev text = the text flow.** One step per flow step, the same terse wording: `instruction` is the action,
    `expect` the result, and callout `label`s are 1–3 words. `dev:` holds the implementation pointer (function,
