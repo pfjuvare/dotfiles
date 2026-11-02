@@ -34,7 +34,8 @@ risk is:
 | `--uat` | **sample data**: made-up names and values, safe to send to testers | none |
 
 - **Real records** (dev default): read the records the flow touches from **DEV** via REST, read-only,
-  and put them in the flow's `data:` / `api:`: real names, positions, statuses and counts. Expected
+  and put them in the flow's `data:` / `api:`: real names, positions, statuses and counts. Set
+  `dataSource: dev` and `dataAsOf: <when read>` at the top so the header says so. Expected
   results then match dev exactly. Read only what the screens need. DEV only, never Demo/Test/Prod.
   Hosted hosts (`*.webeocasp.com`) sit behind Imperva: one login, a handful of reads, no retries, and on
   an Incapsula 403 stop all requests and report the incident ID to PJF.

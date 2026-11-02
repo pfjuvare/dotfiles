@@ -22,7 +22,8 @@ Reading the feedback (`G feedback`) tells the page you've picked it up.
 - The guide is `<name>-guide.html` (or `.uat.html`) at the worktree / repo root, next to its
   `<name>-guide.yaml` flow. With no argument, use this stream's guide; if there are several, ask which.
 - `G feedback <guide.html>` lists the open items with ids, grouped by step (`--all` includes resolved
-  ones, `--json` the raw data). Each item has its text, the step it sits under, and any earlier
+  ones, `--json` the raw data). Each item has its text, any pasted images (`[images: <path>, …]`: open each with Read, they show what
+PJF is pointing at), the step it sits under, and any earlier
   replies. A `[was on: …]` tag means its step was renamed or removed in a re-render.
 - **Nothing there?** PJF probably hasn't saved. Say so: "Send to agent" (or "Save") in the guide's
   sidebar, or paste **Copy feedback** into the chat. If they saved to a downloaded copy instead, ask for
