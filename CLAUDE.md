@@ -90,7 +90,7 @@ implements, spawns streams, or does git/platform/tracker operations.
 - Stream guide files (`/*-guide.*`) are git-excluded by `spawn-stream.sh`.
 - **Feedback loop**: each guide has per-step feedback boxes (question / change / note) that "Send to agent" saves into the
   guide's HTML ("Save" = draft). `webeoc-guide feedback <guide>` lists open items, `respond` writes agent
-  replies, `watch` blocks until Send to agent is pressed; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
+  replies (`--pending [--by <stream>]` for interim ones: the guide then shows live whether that agent's tmux pane is busy), `watch` blocks until Send to agent is pressed; re-renders carry feedback over. The `guide-feedback` skill (`claude/skills/guide-feedback/`) works
   through it. `webeoc-guide serve` (systemd user service `webeoc-guide`, port 47321, set up by `install.sh`)
   saves feedback without a file picker and wakes the stream on Send to agent by typing into its Claude pane.
 - **Before/after toggle**: in a stream worktree the guide's "Test platform" box runs `test-push before|after`

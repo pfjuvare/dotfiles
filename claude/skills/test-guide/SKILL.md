@@ -98,7 +98,8 @@ blended flow that mixes their steps.
   there Send to agent wakes the orchestrator and the toggle works.
 - **Feedback on a combined guide comes to the orchestrator** (its pane is in that folder). Each item records
   its section (`[section: …]` in `webeoc-guide feedback`). Route each item to the stream that owns its section,
-  then write that stream's answer back with `webeoc-guide respond` yourself, so PJF sees it in the guide.
+  replying at once with `respond … --pending --by <stream>` (the guide shows whether that stream is still
+  working), then write that stream's answer back with `webeoc-guide respond` yourself, so PJF sees it in the guide.
 
 ## Feedback in the guide
 

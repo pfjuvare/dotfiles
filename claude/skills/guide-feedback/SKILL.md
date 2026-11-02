@@ -30,7 +30,8 @@ Reading the feedback (`G feedback`) tells the page you've picked it up.
 
 **Combined guide** (one guide, a section per ticket, in the main checkout) and you're the orchestrator:
 don't act on the items yourself. Send each to the stream that owns its section (`[section: …]` shows which),
-then write its answer back with `respond`. Items in General are yours to answer or route.
+right away reply `G respond <guide> <id> --reply "Sent to <stream> to check …" --pending --by <stream>`, then
+write its answer back with `respond` (no `--pending`). Items in General are yours to answer or route.
 
 ## 2. Act on each item
 
@@ -59,6 +60,12 @@ For each item, `G respond <guide.html> <id> --reply "<one or two sentences>" --s
 are read in the guide later, out of the conversation's context: say what you did or found ("Fixed: step
 3 now starts from the Branches tab" / "Parked as a new card: out of this stream's scope"), not "see chat".
 An item PJF replies to again re-opens; pick it up next round.
+
+**Interim replies take `--pending`.** When the answer isn't ready (handed to a stream, a longer
+investigation, waiting on a test-push), reply with what's happening plus `--pending` (and `--by <stream>`
+when a stream is doing the work). The guide then shows PJF, live, whether that agent is busy, idle, stuck on
+a prompt or gone, and offers *Ask for an update* when nothing is working on it. The final reply, without
+`--pending`, clears it. Never leave an item pending once you've stopped working on it.
 
 ## 4. Re-render and hand back
 

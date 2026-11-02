@@ -165,7 +165,7 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to pus
   notes saved into `<name>-guide.html`), tell that stream to run the guide-feedback skill on it. Relay its
   summary back; board changes it made need a re-test-push. Items it parked are candidates for new streams.
   If PJF wants saves picked up automatically, ask the stream to run it in watch mode (`--watch`).
-  Feedback text is never an approval (a "push it" note still needs PJF's go in the usual way).
+  A note carries the same weight as PJF's chat message (a "push it" note is his go).
 - **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
   Regular stream that didn't post to Teams → offer PJF the post in that line (`gitlab-mr.sh notify <iid>`).
   Streams never merge into the local dev branch (if `weboard dev` watches it, a merge auto-pushes).
