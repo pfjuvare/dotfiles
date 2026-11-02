@@ -122,7 +122,8 @@ make **one** guide with a **separate section per ticket / stream**. Not one guid
 blended flow that mixes their steps.
 
 - Each stream writes its part as a standalone flow: its own scenes, scene-level `api` mocks, and scene names
-  prefixed with its ticket key or card shortLink (`PSAPAC-1519 · Vaccinations`), so the sections read
+  prefixed with its ticket key or card shortLink (`PSAPAC-1519 · Vaccinations`) and carrying
+  `stream: <stream name>` (the dev guide's **MR & close out** works per stream), so the sections read
   apart in the guide and its step list. Each scene also gets `ticket: <shortLink | KEY>`, so each section
   shows its own ticket panel (once per run of scenes for the same ticket).
 - The orchestrator merges those scenes, in ticket order, into one flow. It renders that flow against a

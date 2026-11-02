@@ -55,6 +55,23 @@ Rules that still apply:
 - Stream scope and file ownership still hold; so do the WebEOC rules.
 - Don't resolve PJF's items for him by deleting text; reply and set the status.
 
+## Close-out requests (`[CLOSE-OUT: <streams>]`)
+
+The dev guide offers **MR & close out** once every step of a stream's sections is ticked. The item it
+adds ("PJF approves: open the MR, merge-and-deploy and close out <streams> …") is PJF's explicit approval
+for exactly those actions on those streams, as if typed in chat. It approves nothing else.
+
+- **Orchestrator** (combined guide): for each stream, tell it to open its MR (delegate step 8). On its MR
+  link, run "Finish a stream": `merge-and-deploy.sh <iid>` (dry run, then real), then close the stream out.
+  The ticks were on the test-pushed build, so don't wait for a live re-test, but relay the MR's How to
+  test steps for a spot check. Reply in the guide as it goes (`--pending --by <stream>`, MR link) and finish
+  with `--status done` ("Closed: MR !<iid> merged and deployed, stream closed").
+- **Stream** (its own guide): open your MR (step 8), then `SendMessage` the orchestrator "PJF approves (test
+  guide): merge-and-deploy and close out <name>, MR <link>". Reply in the guide `--pending` with the MR link.
+- Stop and reply with the question instead of acting on: a "needs PJF" item from merge-and-deploy (lists,
+  groups), a failed dry run or merge conflict, unticked or stale steps, or anything still open in the
+  stream's scratch. Approval to close isn't approval to skip those.
+
 ## 3. Reply in the guide
 
 For each item, `G respond <guide.html> <id> --reply "<one or two sentences>" --status <status>`. Replies
