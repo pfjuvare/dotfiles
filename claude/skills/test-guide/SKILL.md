@@ -1,7 +1,7 @@
 ---
 name: test-guide
-description: Generate an annotated, screen-by-screen HTML test guide for a WebEOC test flow (view rendered offline through the platform's own view.xsl pipeline with the board's JS running, with highlights, arrows and numbered callouts) and link it in the conversation. Dev guide by default; `--uat` for a plain-English pass/fail version for UAT testers. Use whenever you give PJF a testing flow for a WebEOC change (delegate stream test gate or repro flow, orchestrator relay, ad-hoc "give me a test flow"), or when he types /test-guide.
-argument-hint: '[--uat] [<stream / topic>]'
+description: Generate an annotated, screen-by-screen HTML test guide for a WebEOC test flow (view rendered offline through the platform's own view.xsl pipeline with the board's JS running, with highlights, arrows and numbered callouts) and link it in the conversation. Dev guide by default, built on real dev records (`--sample` for made-up data); `--uat` for a plain-English pass/fail version for UAT testers, on sample data. Use whenever you give PJF a testing flow for a WebEOC change (delegate stream test gate or repro flow, orchestrator relay, ad-hoc "give me a test flow"), or when he types /test-guide.
+argument-hint: '[--uat] [--sample] [<stream / topic>]'
 ---
 
 # /test-guide
@@ -25,6 +25,23 @@ risk is:
 - **A side effect you know of** (you changed shared code, a list, a permission) earns one step for it. Name
   it as the side effect so PJF knows why it's there.
 - If you think a wider re-test is genuinely needed, say so in one line and let PJF decide; don't build it in.
+
+## Data: real dev records (dev guide), sample data (`--sample`, `--uat`)
+
+| Guide | Default data | Option |
+|---|---|---|
+| dev (no flag) | **real DEV records**: the screens show what PJF will see on dev | `--sample`: made-up data |
+| `--uat` | **sample data**: made-up names and values, safe to send to testers | none |
+
+- **Real records** (dev default): read the records the flow touches from **DEV** via REST, read-only,
+  and put them in the flow's `data:` / `api:`: real names, positions, statuses and counts. Expected
+  results then match dev exactly. Read only what the screens need. DEV only, never Demo/Test/Prod.
+  Hosted hosts (`*.webeocasp.com`) sit behind Imperva: one login, a handful of reads, no retries, and on
+  an Incapsula 403 stop all requests and report the incident ID to PJF.
+- **Sample data** (`--sample`, and always with `--uat`): made-up names and values, never real records.
+  Use it when the flow doesn't depend on dev's state, or the guide goes outside the team.
+- A dev guide on real records holds client data: keep it local and internal (stream folder, MR for
+  the team). Send testers the `--uat` guide.
 
 ## Test data on dev: set it up, don't leave it to be found
 
@@ -59,6 +76,9 @@ prerequisites for PJF to discover.
    card, the ticket or the diff, never from a guess; if the before-state isn't known, leave it out.
 3. **UAT only with `--uat`** (never by default): add `uat:` overrides (title, intro, setup, scene name and
    context, and per-step context / instruction / expect / callout text) in plain English with no code terms or field names, then render with `--uat`.
+   Its data is sample data (see "Data"). If the dev guide uses real records, write the UAT guide from its own
+   flow file, `<name>-uat-guide.yaml`, a copy with the `data:` / `api:` swapped for made-up records, so no
+   real record reaches a tester.
 4. **Data and mocks, not fixtures.** The view is compiled by the platform's own `view.xsl` (from
    `~/code/webeoc-src`) and the board's JS runs, so feed it what it reads:
    - `data:` builds the `/data` document. Use `record` for a details/input view, `records` for a list
@@ -69,7 +89,8 @@ prerequisites for PJF to discover.
      and give `display/<view>` arrays in that view's field names. `embeds:` gives data to embedded views.
    - The agency logo is platform data. Keep one `agency-logo.png` at the client repo root (PJF saves it
      from the live header) and every flow picks it up; otherwise the logo circle is blank.
-   - Use **sample data, never real records**. Fixtures (DOM edits) are a last resort; board JS may overwrite them.
+   - Data per the "Data" section: real dev records by default, sample data with `--sample` / `--uat`.
+     Fixtures (DOM edits) are a last resort; board JS may overwrite them.
    - If the render doesn't look right, check the dev guide's Network and console notes for the call that
      needs a mock before reaching for a fixture.
    - If a behaviour can't be produced this way, keep it in the text only.
@@ -141,5 +162,5 @@ streams), add `testPush: <that stream>` at the top of the flow file. Never press
 
 The renderer never contacts WebEOC. `*.webeocasp.com` is refused even if allowlisted, because Imperva
 rate-blocks tooling, and board REST calls only ever hit the `api` mocks (or a stub 404). Don't add WebEOC hosts
-to `allowHosts`. Guides use sample data only, so they're safe to
-attach to an MR or send to a tester.
+to `allowHosts`. Real dev records reach a guide only through the flow file, read beforehand (see "Data").
+Sample-data guides (`--sample`, `--uat`) are safe to send to a tester; real-record dev guides stay internal.
