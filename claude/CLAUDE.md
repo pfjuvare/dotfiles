@@ -127,6 +127,10 @@ We have **read-only (Reporter)** access to the WebEOC product repo: https://gitl
 - **Write findings back**: a new non-obvious finding becomes an atomic `zettelkasten/webeoc - <finding>.md` note (source `file:line` + commit researched; mark verified-in-code vs inferred), linked from the MOC and its topic note.
 - Front-of-mind gotchas (details in the notes): UI edit saves **blank every unposted text field** in the view (disabled inputs, hidden boardpermission fields, unchecked checkboxes, partial `BoardScript.EditRecord`) — REST/Public API updates are partial; `{…}` in view HTML attributes is evaluated as XPath (double braces for literals); `form.submit()` doesn't save (needs the `cmdSave` submitter); `deletebutton` only deletes incident-independent records; expressions outside the repeat ignore default view filters unless `useboardlevelfilters="true"`.
 
+### Positions vs full administrator
+
+A WebEOC *position* (what the user logs in as, e.g. AgVic Ops - Admin) and *full administrator* (a user-account flag) are different things. REST/API resolution defects usually hinge on full administrator vs a user-level account, not on the position. In test flows, guides, MRs and tickets, say which one you mean; don't write "non-admin positions" for an account-level difference.
+
 ### Multi-task batch reporting format
 
 When PJF gives a list of TODOs to action in one batch:

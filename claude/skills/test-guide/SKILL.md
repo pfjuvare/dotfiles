@@ -25,6 +25,15 @@ risk is:
 - **A side effect you know of** (you changed shared code, a list, a permission) earns one step for it. Name
   it as the side effect so PJF knows why it's there.
 - If you think a wider re-test is genuinely needed, say so in one line and let PJF decide; don't build it in.
+- **Bundle variants into one step.** The same screen checked for another position or permission level, with
+  an attachment present or not, or in a second record state, is one more line in that step's `expect`
+  ("Same for admins; the grey hint still shows when the record has an attachment"), not a step of its own.
+  A new step needs a different action or a different screen. One change is usually one or two steps.
+- **Position vs account.** "Non-admin" is ambiguous in WebEOC. A *position* is what the user logs in as
+  (e.g. AgVic Ops - Admin). *Full administrator* is a user-account flag, independent of the position. Most
+  REST/API resolution defects hinge on full administrator vs a user-level account, not on the position. Say
+  which you mean ("a user-level account, not full administrator" / "any non-admin position"), and when it's
+  the account level, say the position doesn't matter.
 
 ## Data: real dev records (dev guide), sample data (`--sample`, `--uat`)
 

@@ -55,19 +55,28 @@ Rules that still apply:
 - Stream scope and file ownership still hold; so do the WebEOC rules.
 - Don't resolve PJF's items for him by deleting text; reply and set the status.
 
-## Close-out requests (`[CLOSE-OUT: <streams>]`)
+## Stream action requests (`[STREAM ACTIONS: <steps> → <streams>]`)
 
-The dev guide offers **MR & close out** once every step of a stream's sections is ticked. The item it
-adds ("PJF approves: open the MR, merge-and-deploy and close out <streams> …") is PJF's explicit approval
-for exactly those actions on those streams, as if typed in chat. It approves nothing else.
+Once every step of a stream's sections is ticked, the dev guide's **Streams** box lets PJF pick what happens
+next and press Send. The item it adds ("PJF approves for <streams>: open the MR, post it to the code review
+channel, merge-and-deploy and close out the stream …") is his explicit approval for exactly the steps
+listed (`mr`, `notify`, `merge`, `close`) on those streams, as if typed in chat. It approves nothing else.
+Old items tagged `[CLOSE-OUT: …]` mean `mr + merge + close`.
 
-- **Orchestrator** (combined guide): for each stream, tell it to open its MR (delegate step 8). On its MR
-  link, run "Finish a stream": `merge-and-deploy.sh <iid>` (dry run, then real), then close the stream out.
-  The ticks were on the test-pushed build, so don't wait for a live re-test, but relay the MR's How to
-  test steps for a spot check. Reply in the guide as it goes (`--pending --by <stream>`, MR link) and finish
-  with `--status done` ("Closed: MR !<iid> merged and deployed, stream closed").
-- **Stream** (its own guide): open your MR (step 8), then `SendMessage` the orchestrator "PJF approves (test
-  guide): merge-and-deploy and close out <name>, MR <link>". Reply in the guide `--pending` with the MR link.
+| Step | What to do |
+|---|---|
+| `mr` | the stream opens its MR (delegate step 8) |
+| `notify` | post the MR's Teams review request: `gitlab-mr.sh notify <iid> --channel code-reviews` (pre-approved by this item, no separate offer) |
+| `merge` | "Finish a stream": `merge-and-deploy.sh <iid>`, dry run then real. The ticks were on the test-pushed build, so don't wait for a live re-test; relay the MR's How to test steps for a spot check |
+| `close` | close the stream out (delegate "Finish a stream" step 3) |
+
+- **Orchestrator** (combined guide): run the steps in order for each stream (tell it to open its MR, then
+  the rest on its MR link). Reply in the guide as each lands (`--pending --by <stream>`, MR link) and
+  finish with `--status done` naming what was done ("MR !42 open, posted to code review").
+- **Stream** (its own guide): do `mr` (and `notify`) yourself, then `SendMessage` the orchestrator the
+  remaining steps verbatim ("PJF approves (test guide) for <name>: merge-and-deploy and close out, MR
+  <link>"). Reply in the guide `--pending` with the MR link.
+- A later request for the same stream (e.g. `merge + close` after an earlier `mr`) uses the MR already open.
 - Stop and reply with the question instead of acting on: a "needs PJF" item from merge-and-deploy (lists,
   groups), a failed dry run or merge conflict, unticked or stale steps, or anything still open in the
   stream's scratch. Approval to close isn't approval to skip those.

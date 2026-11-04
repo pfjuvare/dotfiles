@@ -166,9 +166,10 @@ push its own `mr/<name>` branch and open an MR (no per-push ask), for YOU to pus
   summary back; board changes it made need a re-test-push. Items it parked are candidates for new streams.
   If PJF wants saves picked up automatically, ask the stream to run it in watch mode (`--watch`).
   A note carries the same weight as PJF's chat message (a "push it" note is his go).
-- **Close-out from the guide**: a `[CLOSE-OUT: <streams>]` item (the guide's **MR & close out** button, offered
-  once all of a stream's steps are ticked) is PJF's go for MR → merge-and-deploy → close for those streams.
-  Run it per the guide-feedback skill's "Close-out requests", replying in the guide as each step lands.
+- **Stream actions from the guide**: a `[STREAM ACTIONS: <steps> → <streams>]` item (the dev guide's
+  **Streams** box, offered once all of a stream's steps are ticked) is PJF's go for exactly those steps
+  (open MR / notify code review / merge-and-deploy / close out). Run it per the guide-feedback skill's
+  "Stream action requests", replying in the guide as each step lands.
 - **Done** = the stream sends you its MR link. Record it (status `mr-open !<iid>`) and tell PJF one line.
   Regular stream that didn't post to Teams → offer PJF the post in that line (`gitlab-mr.sh notify <iid>`).
   Streams never merge into the local dev branch (if `weboard dev` watches it, a merge auto-pushes).
