@@ -213,9 +213,9 @@ before review. `~/.claude/skills/delegate/test-push.sh` (on PJF's PATH as `test-
   with dev (tables → resources → `Util - Schema - *` → views), from the worktree. Records a **claim** per asset in
   `.git/test-slots.tsv`.
 - `status` — what's on the platform right now, per stream. Check it before telling PJF what he's testing.
-- `release <name> [--restore]` — drop the claims; `--restore` re-pushes dev's version (rejected/abandoned).
-- `before <name>` / `after <name>` — switch the stream's claimed assets between dev's version and the stream's
-  build, **keeping the claims**, so PJF can compare before/after. `status` shows which side is live. PJF normally
+- `release <name> [--restore]` — drop the claims; `--restore` puts back what was live before (rejected/abandoned).
+- `before <name>` / `after <name>` — switch the stream's claimed assets between what was live before its first
+  push and the stream's build, **keeping the claims**, so PJF can compare before/after. `status` shows which side is live. PJF normally
   does this from the test guide's "Test platform" toggle (through the webeoc-guide helper); a toggle click is
   PJF's approval for that one switch. Never run `before`/`after` yourself unless PJF asks, and never call the
   helper's `/testpush` endpoint. A stream left on `before` isn't showing its change: check `status` before relaying
@@ -223,6 +223,16 @@ before review. `~/.claude/skills/delegate/test-push.sh` (on PJF's PATH as `test-
   `testPush: <combined stream>` so its toggle drives that build.
 - Merging is the normal release: `merge-and-deploy.sh` re-pushes the merged assets from dev and clears
   their claims.
+
+**Snapshots: "before" is exactly what was live.** The first push of an asset pulls the live board once (no
+retries) and keeps that asset's live version in `.git/test-snapshots/<name>/`. `before` and `release --restore`
+push the snapshot back, so colleagues' work on those assets survives; nothing else on the platform is touched.
+If the live version differs from your local dev (whitespace aside), `push` **stops with exit 3 before pushing
+anything** and says which asset and why: your dev is behind `origin/<dev>` (pull dev, `git merge dev` in the
+worktree, push again), or someone pushed work that isn't on dev. Relay that to PJF with the options; don't
+pick one yourself: `test-push integrate <name>` (3-way merges the live change into the worktree; review,
+commit, push again), `push <name> --overwrite-live` (push anyway; `before` / `release --restore` still put
+their version back), or ask whoever pushed it. On an Imperva/Incapsula 403 during the snapshot pull, stop.
 
 **One live version per asset, not one worktree at a time.** Streams touching disjoint assets can be under
 test together. `push` refuses an asset another stream claims (test → merge/release that one first), and
@@ -259,6 +269,20 @@ if a merged change isn't live there, check the watcher first.
    Then close the tmux window, `git worktree remove`, delete the local branch, mark the stream `CLOSED` in the
    state file (keep the section), and log it wherever the project records completed work. The project's
    orchestrator skill may have a fuller checklist (agvic: orchestrate → "Closing a stream").
+
+## Resetting the orchestrator (`/clear`)
+
+Use it when this session's context is long (slow, compacting often), between batches (streams closed out),
+or when it has lost the thread. Not mid-operation: not during a test-push, merge-and-deploy or MR, or while a
+subagent is editing. A `/clear` keeps the session's agent name, so streams' briefs still reach you, but it
+drops everything only said in the conversation, including the fact that you're the orchestrator.
+
+1. Reconcile the state file (worktrees, `ListAgents`, `test-push status`) and add an **In flight** block at
+   the top: approvals PJF gave in chat that aren't acted on yet, what you're waiting on from whom, guide
+   watchers / Monitors / subagents running, and the next step per stream.
+2. Wait for subagents to finish; stop watchers you'll re-arm.
+3. PJF runs `/clear`, then `/orchestrate` (or `/delegate`). The new context reads the state file and
+   reconciles before acting, then re-arms the watchers. Approvals not written down are asked for again.
 
 ## Session orchestrator (optional tier above you)
 
