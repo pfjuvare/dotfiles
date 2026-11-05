@@ -58,7 +58,7 @@ Rules that still apply:
 ## Stream action requests (`[STREAM ACTIONS: <steps> → <streams>]`)
 
 Once every step of a stream's sections is ticked, the dev guide's **Streams** box lets PJF pick what happens
-next and press Send. The item it adds ("PJF approves for <streams>: open the MR, post it to the code review
+next and press Send. The item it adds ("Approved in the test guide for <streams>: open the MR, post it to the code review
 channel, merge-and-deploy and close out the stream …") is his explicit approval for exactly the steps
 listed (`mr`, `notify`, `merge`, `close`, and the rarer `keep`, `local`, `release`) on those streams, as if typed in chat. It approves nothing else.
 Old items tagged `[CLOSE-OUT: …]` mean `mr + merge + close`.
