@@ -19,7 +19,7 @@ cat >"$T/bin/weboard" <<'EOF'
 plat="${FAKE_PLATFORM:?}/$(cat webeoc.board.json)"
 case "$1" in
   push)
-    d=$(ls -d board-*/"$2" 2>/dev/null | head -1); f=$(ls -d "$d"/* | head -1)
+    d=$(ls -d board-*/"$2" 2>/dev/null | head -1); f=$(ls -d "$d"/* | grep -v /config.json | head -1); [ -n "$f" ] || f="$d/config.json"
     echo "$2=$(head -1 "$f")" >>"$WEBOARD_LOG"
     mkdir -p "$plat/$(dirname "$d")"; rm -rf "${plat:?}/${d:?}"; cp -R "$d" "$plat/$(dirname "$d")/"
     echo "$2 successfully pushed" ;;
@@ -37,14 +37,20 @@ cd "$repo"
 git init -q -b dev
 git config user.email t@t; git config user.name t
 echo b1 >boards/b1/webeoc.board.json
+echo '{"board":"b1"}' >boards/b1/board-config.json
 echo dev-view >"boards/b1/board-displays/View A/view.xhtml"
 printf 'dev-res\nline2\nline3\nline4\nline5\n' >"boards/b1/board-resources/Res/res.js"
 mkdir -p "boards/b1/board-tables/ZTbl"; echo dev-tbl >"boards/b1/board-tables/ZTbl/config.json"
 echo 'WE_URL=x' >boards/b1/.env; echo '.env' >.gitignore
 git add -A; git commit -qm base
 git remote add origin "$T/origin.git"; git push -q origin dev
-# the platform starts as dev
-mkdir -p "$T/platform/b1"; cp -R boards/b1/board-* "$T/platform/b1/"
+# the platform starts as dev, as `weboard pull` returns it: config with platform-only keys and filters
+# sorted, code reformatted
+mkdir -p "$T/platform/b1"; cp -R boards/b1/board-displays boards/b1/board-resources boards/b1/board-tables "$T/platform/b1/"
+printf '{"name":"View A","viewFilters":[{"name":"B"},{"name":"A"}],"contentType":"x"}\n' >"boards/b1/board-displays/View A/config.json"
+git add -A; git commit -qm "view config"; git push -q origin dev
+printf '{\n  "globalid": "g-1",\n  "name": "View A",\n  "viewFilters": [{"name": "A"}, {"name": "B"}],\n  "contenttype": "x",\n  "thumbnail": {"icon": "t"}\n}\n' >"$T/platform/b1/board-displays/View A/config.json"
+printf 'dev-res\nline2\nline3\nline4\nline5\n\n' >"$T/platform/b1/board-resources/Res/res.js"
 git worktree add -q .claude/worktrees/s1 -b worktree-s1
 ( cd .claude/worktrees/s1
   echo stream-view >"boards/b1/board-displays/View A/view.xhtml"
@@ -60,6 +66,7 @@ pulls() { wc -l <"$PULL_LOG" | tr -d ' '; }
 "$TP" push s1 >/dev/null
 check "push: table first, then the stream build of both views" '[ "$(head -1 "$WEBOARD_LOG")" = "ZTbl=stream-tbl" ] && [ "$(last 2)" = "View A=stream-view View B=stream-new " ]'
 check "push: the live board is pulled once to snapshot it" '[ "$(pulls)" = 1 ]'
+check "push: the snapshot keeps the board's config files (board-config.json too)" '[ -f .git/test-snapshots/s1/boards/b1/board-config.json ] && [ -f .git/test-snapshots/s1/boards/b1/webeoc.board.json ]'
 check "push: snapshot records the new view as not live before" 'grep -q "b1/View B	absent" .git/test-snapshots/s1/index && grep -q "b1/View A	live" .git/test-snapshots/s1/index'
 
 : >"$WEBOARD_LOG"

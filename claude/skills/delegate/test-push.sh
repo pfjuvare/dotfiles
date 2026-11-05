@@ -89,8 +89,11 @@ do_push() {
 
 snaps="$main/.git/test-snapshots"
 asset_dir() { local d; for d in "$1"/board-*/"$2"; do [ -e "$d" ] && { printf '%s' "$d"; return 0; }; done; return 1; }
-# Same asset content, whitespace aside (weboard's pull formatting isn't byte-identical to the repo's).
-same_asset() { [ -n "$1" ] && [ -n "$2" ] && diff -rqwB "$1" "$2" >/dev/null; }
+# Same asset, ignoring what `weboard pull` changes by itself (platform-only config keys, filter order,
+# code formatting): same-asset.py. JS comparison uses the repo's prettier when there is one.
+here=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
+prettier_bin() { local p; for p in "$main/node_modules/.bin/prettier" "$main"/boards/*/node_modules/.bin/prettier; do [ -x "$p" ] && { printf '%s' "$p"; return; }; done; command -v prettier || true; }
+same_asset() { [ -n "$1" ] && [ -n "$2" ] && SAME_ASSET_PRETTIER="${SAME_ASSET_PRETTIER-$(prettier_bin)}" python3 "$here/same-asset.py" "$1" "$2"; }
 snap_state() { awk -F'\t' -v k="$2" '$1==k{print $2}' "$snaps/$1/index" 2>/dev/null | tail -1; }
 
 # snapshot <stream> <key>... → for keys not yet snapshotted: pull each board's live version once into a
@@ -107,7 +110,8 @@ snapshot() {
     local pull="$root/.pull-$d"; rm -rf "${root:?}/.pull-${d:?}"; mkdir -p "$pull" "$root/boards/$d"
     # the board's root config (webeoc.board.json, .env…), not its assets
     for f in "$main/boards/$d"/* "$main/boards/$d"/.env; do
-      case "${f##*/}" in board-*|node_modules|logs|*.md) continue ;; esac
+      [ -d "$f" ] && continue   # board-*/, node_modules/, logs/: not config
+      case "${f##*/}" in *.md) continue ;; esac
       [ -f "$f" ] && { cp "$f" "$pull/"; [ -e "$root/boards/$d/${f##*/}" ] || cp "$f" "$root/boards/$d/"; }
     done
     echo "  snapshot: pulling the live $d board once (to keep what's live now)"
