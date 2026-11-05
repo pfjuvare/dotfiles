@@ -60,7 +60,7 @@ Rules that still apply:
 Once every step of a stream's sections is ticked, the dev guide's **Streams** box lets PJF pick what happens
 next and press Send. The item it adds ("PJF approves for <streams>: open the MR, post it to the code review
 channel, merge-and-deploy and close out the stream …") is his explicit approval for exactly the steps
-listed (`mr`, `notify`, `merge`, `close`) on those streams, as if typed in chat. It approves nothing else.
+listed (`mr`, `notify`, `merge`, `close`, and the rarer `keep`, `local`, `release`) on those streams, as if typed in chat. It approves nothing else.
 Old items tagged `[CLOSE-OUT: …]` mean `mr + merge + close`.
 
 | Step | What to do |
@@ -69,6 +69,9 @@ Old items tagged `[CLOSE-OUT: …]` mean `mr + merge + close`.
 | `notify` | post the MR's Teams review request: `gitlab-mr.sh notify <iid> --channel code-reviews` (pre-approved by this item, no separate offer) |
 | `merge` | "Finish a stream": `merge-and-deploy.sh <iid>`, dry run then real. The ticks were on the test-pushed build, so don't wait for a live re-test; relay the MR's How to test steps for a spot check |
 | `close` | close the stream out (delegate "Finish a stream" step 3) |
+| `keep` | after `merge`, leave the stream open: relay How to test and wait for PJF's live re-test before closing |
+| `local` | no-MR work: merge into the dev branch locally (delegate "Finish a stream" step 1), no MR |
+| `release` | `test-push release <name> --restore`: put back what was live before, drop the claims; the stream stays open |
 
 - **Orchestrator** (combined guide): run the steps in order for each stream (tell it to open its MR, then
   the rest on its MR link). Reply in the guide as each lands (`--pending --by <stream>`, MR link) and
