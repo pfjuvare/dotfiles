@@ -227,7 +227,7 @@ before review. `~/.claude/skills/delegate/test-push.sh` (on PJF's PATH as `test-
 **Snapshots: "before" is exactly what was live.** The first push of an asset pulls the live board once (no
 retries) and keeps that asset's live version in `.git/test-snapshots/<name>/`. `before` and `release --restore`
 push the snapshot back, so colleagues' work on those assets survives; nothing else on the platform is touched.
-If the live version differs from your local dev (whitespace aside), `push` **stops with exit 3 before pushing
+If the live version differs from your local dev (ignoring what a pull changes by itself: platform-only config keys, filter order, code formatting), `push` **stops with exit 3 before pushing
 anything** and says which asset and why: your dev is behind `origin/<dev>` (pull dev, `git merge dev` in the
 worktree, push again), or someone pushed work that isn't on dev. Relay that to PJF with the options; don't
 pick one yourself: `test-push integrate <name>` (3-way merges the live change into the worktree; review,

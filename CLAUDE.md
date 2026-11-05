@@ -81,7 +81,7 @@ implements, spawns streams, or does git/platform/tracker operations.
 
 ## webeoc-guide (annotated test guides)
 
-`~/code/webeoc-guide` is a separate repo (no remote yet, so it isn't a submodule here) that renders annotated, screen-by-screen HTML test guides for WebEOC views: spotlight highlights, arrows and numbered callouts. The **`test-guide` skill** (`claude/skills/test-guide/`) drives it, and `/delegate` streams use it at the test gate, linking the guide next to the text test flow.
+`~/code/webeoc-guide` is a separate repo (gitlab.juvare.com `apac/tools/webeoc-guide`, not a submodule here) that renders annotated, screen-by-screen HTML test guides for WebEOC views: spotlight highlights, arrows and numbered callouts. The **`test-guide` skill** (`claude/skills/test-guide/`) drives it, and `/delegate` streams use it at the test gate, linking the guide next to the text test flow.
 
 - Run: `node ~/code/webeoc-guide/bin/webeoc-guide.js render <flow>.yaml [--uat] [--open]`. It writes `<flow>.html` (terse dev guide), or with `--uat` `<flow>.uat.html` (plain-English pass/fail version), and prints a `file://wsl.localhost/…` link that opens with ctrl+click in Windows Terminal. Flow format: its `README.md` and `examples/agvic-branch-input.yaml`.
 - Screens are rendered **offline through the platform's own pipeline**: `admin_fieldlist.xsl` and `view.xsl` from `~/code/webeoc-src`, run on a `/data` built from the flow: real dev records read beforehand by default for dev guides, sample data with `--sample` and always for `--uat`. The board's JS runs against REST mocks from the flow. WebEOC hosts are never contacted, and the screens are not live screenshots. Without webeoc-src it falls back to a hand-written preview renderer.
