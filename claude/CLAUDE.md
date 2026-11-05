@@ -52,7 +52,7 @@ These apply to any client board project (CSG, DPIRD, NTFES, QFD, sa-ses, waterco
 
 `weboard dev` (file-watcher / live-sync) and `weboard push` / `weboard pull` use the same upload/download pipeline. Running them concurrently can race and corrupt state — local files overwritten by partial pushes, remote diverging from local, lost work.
 
-- Before suggesting OR running `weboard push`, `weboard pull`, or anything that uses the same pipeline, **ask first**: "OK to run `weboard push <asset>` — is `weboard dev` running?" Wait for the green light.
+- Before suggesting OR running `weboard push`, `weboard pull`, or anything that uses the same pipeline, **ask first** ("OK to run `weboard push <asset>`?") unless PJF already told me to push. Don't ask whether `weboard dev` is running (he no longer runs it): check it myself with `ps -eo pid,args | grep -i "[w]eboard dev"` (empty = not running; `test-push` checks too).
 - Same principle for `webeoc-lists push` (separate tool, same caution).
 - If editing a per-view `config.json` (e.g. adding viewFilters), call out that the change won't take effect until pushed, and ASK rather than push silently.
 - Exception: PJF himself running `weboard dev` is fine — that's his development loop. The problem is *me* triggering parallel platform operations.
